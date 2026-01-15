@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth-middleware'
-import type { Prisma } from '@/generated/prisma'
+import type { Prisma } from '@/src/generated/prisma'
 
 
 const updateSchema = z.object({

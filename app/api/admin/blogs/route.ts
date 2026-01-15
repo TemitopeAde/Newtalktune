@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { StatusCodes } from 'http-status-codes'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth-middleware'
-import type { Prisma } from '@/generated/prisma'
+import type { Prisma } from '@/src/generated/prisma'
 
 export async function GET(request: NextRequest) {
   try {
