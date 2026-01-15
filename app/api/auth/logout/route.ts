@@ -25,9 +25,19 @@ import { cookies } from 'next/headers'
  */
 export async function POST(request: NextRequest) {
     try {
-        // Clear the auth token cookie
         const cookieStore = await cookies()
+
+        // Clear custom auth token cookie
         cookieStore.delete('auth-token')
+        cookieStore.delete('refresh-token')
+
+        // Clear NextAuth session cookies (for OAuth users)
+        cookieStore.delete('next-auth.session-token')
+        cookieStore.delete('next-auth.csrf-token')
+        cookieStore.delete('next-auth.callback-url')
+        cookieStore.delete('__Secure-next-auth.session-token')
+        cookieStore.delete('__Secure-next-auth.csrf-token')
+        cookieStore.delete('__Secure-next-auth.callback-url')
 
         return NextResponse.json(
             {
@@ -38,11 +48,11 @@ export async function POST(request: NextRequest) {
         )
     } catch (error) {
         console.error('Logout API Route Error:', error)
-        
-        const errorMessage = error instanceof Error 
-            ? error.message 
+
+        const errorMessage = error instanceof Error
+            ? error.message
             : 'An error occurred during logout'
-            
+
         return NextResponse.json(
             { error: errorMessage },
             { status: StatusCodes.INTERNAL_SERVER_ERROR }

@@ -1,72 +1,71 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import type { NextRequestWithAuth } from "next-auth/middleware";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-    function middleware(req: NextRequestWithAuth) {
-        const { pathname } = req.nextUrl;
-        const token = req.nextauth.token;
+export function middleware(req: NextRequest) {
+    const { pathname } = req.nextUrl;
 
-        // Additional checks for admin routes
-        if (pathname.startsWith("/admin") && token) {
-            // You can add role-based checks here if needed
-            // For example: if (token.role !== 'admin') { redirect to unauthorized }
+    // Public routes that don't require authentication
+    const publicRoutes = [
+        "/",
+        "/auth/login",
+        "/auth/register",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+        "/auth/verify",
+        "/blogs",
+        "/contact",
+        "/pricing",
+        "/collaboration-demo"
+    ];
+
+    // Check if the current path is a public route
+    const isPublicRoute = publicRoutes.some(route =>
+        pathname === route || pathname.startsWith(`${route}/`)
+    );
+
+    // Allow access to public routes without authentication
+    if (isPublicRoute) {
+        return NextResponse.next();
+    }
+
+    // Allow API auth routes
+    if (pathname.startsWith("/api/auth")) {
+        return NextResponse.next();
+    }
+
+    // Allow other API routes (they handle their own auth)
+    if (pathname.startsWith("/api/")) {
+        return NextResponse.next();
+    }
+
+    // Check if user is trying to access protected routes
+    const isDashboardRoute = pathname.startsWith("/dashboard");
+    const isAdminRoute = pathname.startsWith("/admin");
+
+    if (isDashboardRoute || isAdminRoute) {
+        // Check for custom auth-token cookie (email/password login)
+        const authToken = req.cookies.get("auth-token")?.value;
+
+        // Check for NextAuth session cookie (OAuth login - database sessions)
+        // Cookie name varies: 'next-auth.session-token' (dev) or '__Secure-next-auth.session-token' (prod)
+        const nextAuthSessionToken =
+            req.cookies.get("next-auth.session-token")?.value ||
+            req.cookies.get("__Secure-next-auth.session-token")?.value;
+
+        // Allow if either auth method is present
+        if (authToken || nextAuthSessionToken) {
+            return NextResponse.next();
         }
 
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            authorized: ({ token, req }) => {
-                const { pathname } = req.nextUrl;
-
-                // Public routes that don't require authentication
-                const publicRoutes = [
-                    "/",
-                    "/auth/login",
-                    "/auth/register",
-                    "/auth/forgot-password",
-                    "/auth/reset-password",
-                    "/blogs",
-                    "/contact",
-                    "/pricing",
-                    "/collaboration-demo"
-                ];
-
-                // Check if the current path is a public route
-                const isPublicRoute = publicRoutes.some(route =>
-                    pathname === route || pathname.startsWith(`${route}/`)
-                );
-
-                // Allow access to public routes without authentication
-                if (isPublicRoute) {
-                    return true;
-                }
-
-                // Allow API auth routes
-                if (pathname.startsWith("/api/auth")) {
-                    return true;
-                }
-
-                // Check if user is trying to access dashboard or admin routes
-                const isDashboardRoute = pathname.startsWith("/dashboard");
-                const isAdminRoute = pathname.startsWith("/admin");
-
-                // Require authentication for dashboard and admin routes
-                // If no token (not logged in), user will be redirected to login
-                if (isDashboardRoute || isAdminRoute) {
-                    return !!token;
-                }
-
-                // For all other routes, allow access
-                return true;
-            },
-        },
-        pages: {
-            signIn: "/auth/login",
-        },
+        // Not authenticated - redirect to login
+        const loginUrl = new URL("/auth/login", req.url);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
     }
-);
+
+    // For all other routes, allow access
+    return NextResponse.next();
+}
 
 export const config = {
     matcher: [

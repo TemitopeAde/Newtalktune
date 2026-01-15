@@ -8,7 +8,7 @@ import { Apple, Facebook, Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { useRegister } from "@/hooks/auth/useAuth";
 import { ValidationErrors } from "@/types";
@@ -22,6 +22,8 @@ import { signIn } from "next-auth/react";
 
 const Page = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("US");
   const [countryCode, setCountryCode] = useState("+1");
@@ -306,7 +308,7 @@ const Page = () => {
       <div className="grid grid-cols-1 gap-4 w-full">
         <button
           type="button"
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          onClick={() => signIn("google", { callbackUrl })}
           className="flex items-center h-[50px] font-semibold justify-center bg-[#DB4437] text-gray-100 hover:bg-[#DB443780] py-2 rounded-sm transition-colors duration-200"
         >
           <Image
