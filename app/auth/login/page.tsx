@@ -4,11 +4,11 @@ import PrimaryBtn from "@/components/buttons/PrimaryBtn";
 import PasswordInput from "@/components/inputs/PasswordInput";
 import TextInput from "@/components/inputs/TextInput";
 import Checkbox from "@/components/ui/checkbox";
-import { Apple, Facebook, Google } from "@/constants/Icons";
+import { Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useLogin } from "@/hooks/auth/useAuth";
 import { useUserStore } from "@/store/useUserStore";
 import { ValidationErrors } from "@/types";
@@ -23,7 +23,7 @@ const loginSchema = z.object({
 
 type LoginInput = z.infer<typeof loginSchema>;
 
-const Page = () => {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -77,58 +77,6 @@ const Page = () => {
     }
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setFieldErrors({});
-  //   setFormError("");
-
-  //   try {
-  //     const validatedData = loginSchema.safeParse(formData);
-  //     if (!validatedData.success) {
-  //       const errors: ValidationErrors = {};
-  //       validatedData.error.issues.forEach((issue) => {
-  //         const path = issue.path[0] as string;
-  //         if (!errors[path]) {
-  //           errors[path] = [];
-  //         }
-  //         errors[path].push(issue.message);
-  //       });
-  //       setFieldErrors(errors);
-  //       return;
-  //     }
-
-  //     const result = await login(validatedData.data);
-
-  //     if (result.result.error === "Invalid email or password") {
-  //       setFormError("Invalid email or password");
-  //     }
-
-
-  //     // Check if user needs email verification
-  //     if (result.result.requiresVerification) {
-  //       setFormError("Please verify your email address");
-  //       setEmail(result.email || formData.email);
-  //       router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
-  //       return;
-  //     }
-
-  //     // Normal successful login
-  //     if (result.success && result.user) {
-  //       setUser(result.user);
-  //       if (result.token) {
-  //         setToken(result.token);
-  //       }
-  //       router.push("/dashboard");
-  //     }
-
-  //   } catch (err: any) {
-  //     console.error('Login error:', err);
-  //     const errorMessage = err?.message || 'An unexpected error occurred';
-  //     setFormError(errorMessage);
-  //   }
-  // };
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
@@ -178,6 +126,7 @@ const Page = () => {
       setFormError(errorMessage);
     }
   };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -274,33 +223,6 @@ const Page = () => {
           />
           <span>Google</span>
         </button>
-        {/* <button
-          type="button"
-          onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
-          className="flex items-center h-[50px] font-semibold justify-center bg-[#005EBA] text-gray-100 hover:bg-[#005EBA80] py-2 rounded-sm transition-colors duration-200"
-        >
-          <Image
-            src={Facebook}
-            alt="Facebook"
-            width={10}
-            height={10}
-            className="mr-2"
-          />
-          <span>Facebook</span>
-        </button> */}
-        {/* <Link
-          href="#"
-          className="flex items-center h-[50px] font-semibold justify-center bg-[#25324B] text-gray-100 hover:bg-gray-800 py-2 rounded-sm transition-colors duration-200"
-        >
-          <Image
-            src={Apple}
-            alt="Apple"
-            width={20}
-            height={20}
-            className="mr-2"
-          />
-          <span>Apple</span>
-        </Link> */}
       </div>
 
       <p className="text-sm text-gray-300 font-medium text-right w-full">
@@ -314,6 +236,20 @@ const Page = () => {
       </p>
     </form>
   );
-};
+}
 
-export default Page;
+function LoginFallback() {
+  return (
+    <div className="flex max-w-lg w-full flex-col px-4 items-center justify-center h-screen gap-6">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
