@@ -4,10 +4,10 @@ import PrimaryBtn from "@/components/buttons/PrimaryBtn";
 import PasswordInput from "@/components/inputs/PasswordInput";
 import TextInput from "@/components/inputs/TextInput";
 import Checkbox from "@/components/ui/checkbox";
-import { Apple, Facebook, Google } from "@/constants/Icons";
+import { Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { useRegister } from "@/hooks/auth/useAuth";
@@ -20,7 +20,7 @@ import { useUserStore } from "@/store/useUserStore"
 import CountrySelect from "@/components/CountrySelect";
 import { signIn } from "next-auth/react";
 
-const Page = () => {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -320,9 +320,8 @@ const Page = () => {
           />
           <span>Google</span>
         </button>
-
-
       </div>
+
       <p className="text-sm text-gray-300 font-medium text-right w-full">
         Already have an account?{" "}
         <Link
@@ -334,6 +333,20 @@ const Page = () => {
       </p>
     </form>
   );
-};
+}
 
-export default Page;
+function RegisterFallback() {
+  return (
+    <div className="flex w-full md:max-w-lg flex-col px-4 items-center justify-center min-h-screen gap-6">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<RegisterFallback />}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
