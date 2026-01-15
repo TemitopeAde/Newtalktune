@@ -7,7 +7,7 @@ import Checkbox from "@/components/ui/checkbox";
 import { Apple, Facebook, Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useLogin } from "@/hooks/auth/useAuth";
 import { useUserStore } from "@/store/useUserStore";
@@ -25,6 +25,8 @@ type LoginInput = z.infer<typeof loginSchema>;
 
 const Page = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { data: session, status } = useSession();
   const [remember, setRemember] = useState(false);
   const { setUser, setToken, setEmail } = useUserStore();
@@ -49,10 +51,10 @@ const Page = () => {
         createdAt: new Date(),
       });
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Redirect to callback URL or dashboard
+      router.push(callbackUrl);
     }
-  }, [session, status, setUser, router]);
+  }, [session, status, setUser, router, callbackUrl]);
 
 
   const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
@@ -167,7 +169,7 @@ const Page = () => {
         if (result.token) {
           setToken(result.token);
         }
-        router.push("/dashboard");
+        router.push(callbackUrl);
       }
 
     } catch (err: any) {
@@ -260,7 +262,7 @@ const Page = () => {
       <div className="grid grid-cols-1 gap-4 w-full">
         <button
           type="button"
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          onClick={() => signIn("google", { callbackUrl })}
           className="flex items-center h-[50px] font-semibold justify-center bg-[#DB4437] text-gray-100 hover:bg-[#DB443780] py-2 rounded-sm transition-colors duration-200"
         >
           <Image

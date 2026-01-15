@@ -18,31 +18,24 @@ const LogoutInfo = () => {
     setError(null);
 
     try {
-      // Handle NextAuth logout
-      if (session) {
-        await signOut({ callbackUrl: '/auth/login' });
-        onClose();
-        return;
-      }
-
-      // Handle JWT logout
-      const response = await fetch('/api/auth/logout', {
+      // Always call the custom logout API to clear all cookies
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to logout');
-        return;
-      }
-
       // Close the modal
       onClose();
 
+      // If there's a NextAuth session, use signOut for proper cleanup
+      if (session) {
+        await signOut({ callbackUrl: '/auth/login', redirect: true });
+        return;
+      }
+
       // Redirect to login page
       router.push('/auth/login');
+      router.refresh();
 
     } catch (err) {
       console.error('Logout error:', err);
