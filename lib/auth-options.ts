@@ -5,9 +5,10 @@ import prisma from "@/lib/db";
 import { generateToken } from "@/lib/jwt";
 import { cookies } from "next/headers";
 import type { AuthOptions } from "next-auth";
+import type { PrismaClient } from "@prisma/client";
 
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(prisma),
+    adapter: PrismaAdapter(prisma as unknown as PrismaClient),
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
