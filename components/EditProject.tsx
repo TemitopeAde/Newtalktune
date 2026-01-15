@@ -38,7 +38,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
     initialVoiceSettings || {
       gender: "MALE",
       age: "YOUNG_ADULT",
-      language: "english",
+      language: "English",
       mood: "ANXIOUS",
     }
   );
@@ -370,10 +370,10 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
                   <span
                     key={index}
                     className={`transition-all duration-200 ${isBeingRead
-                        ? 'font-bold text-white bg-green-600/30 px-1 rounded'
-                        : isHighlighted
-                          ? 'font-semibold text-white'
-                          : 'text-white/60 font-normal'
+                      ? 'font-bold text-white bg-green-600/30 px-1 rounded'
+                      : isHighlighted
+                        ? 'font-semibold text-white'
+                        : 'text-white/60 font-normal'
                       }`}
                   >
                     {word}{' '}

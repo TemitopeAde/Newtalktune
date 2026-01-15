@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const defaultSettings: VoiceSettings = {
       gender: 'MALE',
       age: 'YOUNG_ADULT',
-      language: 'english',
+      language: 'English',
       mood: 'HAPPY',
     };
 

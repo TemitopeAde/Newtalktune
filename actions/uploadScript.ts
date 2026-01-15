@@ -9,11 +9,11 @@ import { z } from "zod"
 
 
 export async function uploadScript(formData: UploadScriptDataWithVoice): Promise<{
-  success?: boolean;
-  error?: string;
-  message?: string;
-  scriptId?: string;
-  data?: any;
+    success?: boolean;
+    error?: string;
+    message?: string;
+    scriptId?: string;
+    data?: any;
 }> {
     try {
         const { projectName, language, content, mode, fileName, fileSize, fileType, userId, voiceSettings, generateAudio: shouldGenerateAudio, voiceModelId } = formData
@@ -53,10 +53,10 @@ export async function uploadScript(formData: UploadScriptDataWithVoice): Promise
 
         // Generate audio if requested and voice settings are provided
         let audioData = null;
-        if (shouldGenerateAudio && content.trim()) {
+        if (shouldGenerateAudio && content.trim() && voiceSettings) {
             try {
                 const audioResult = await generateAudio(content, voiceSettings, scriptId, voiceModelId);
-                
+
                 if (audioResult.success) {
                     // Update script with audio information
                     await prisma.script.update({
@@ -69,7 +69,7 @@ export async function uploadScript(formData: UploadScriptDataWithVoice): Promise
                             audioSettings: JSON.stringify(voiceSettings),
                         }
                     });
-                    
+
                     audioData = {
                         audioFileName: audioResult.audioFileName,
                         audioFileSize: audioResult.audioFileSize,

@@ -21,15 +21,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
               }
               return failureCount < 1;
             },
-            onError: (error: any) => {
-              // Handle 401 errors globally for queries too
-              if (error?.response?.status === 401 || error?.message?.includes('Invalid or expired token')) {
-                toast.error('Your session has expired. Please login again.');
-                const { logout } = useUserStore.getState();
-                logout();
-                window.location.href = '/auth/login';
-              }
-            },
           },
           mutations: {
             retry: (failureCount, error: any) => {
@@ -38,15 +29,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
                 return false;
               }
               return failureCount < 1;
-            },
-            onError: (error: any) => {
-              // Handle 401 errors globally
-              if (error?.response?.status === 401 || error?.message?.includes('Invalid or expired token')) {
-                toast.error('Your session has expired. Please login again.');
-                const { logout } = useUserStore.getState();
-                logout();
-                window.location.href = '/auth/login';
-              }
             },
           },
         },

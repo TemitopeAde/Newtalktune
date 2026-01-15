@@ -6,6 +6,7 @@ type LoginResponse = {
     error?: string;
     success?: boolean;
     message?: string;
+    token?: string;
     user?: {
         id: string;
         name: string;
