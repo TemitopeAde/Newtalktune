@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTTSAudio } from '@/lib/tts';
 import { prisma } from '@/lib/prisma';
-import { VoicePreview } from '@prisma/client';
 import path from 'path';
 import fs from 'fs/promises';
+
+interface VoicePreviewRecord {
+    voiceId: string;
+    voiceName: string;
+    audioFileUrl: string | null;
+    audioFileSize: number | null;
+    createdAt: Date;
+}
 
 
 
@@ -172,7 +179,7 @@ export async function GET() {
 
         return NextResponse.json({
             success: true,
-            previews: previews.map((preview: VoicePreview) => ({
+            previews: previews.map((preview: VoicePreviewRecord) => ({
                 voiceId: preview.voiceId,
                 voiceName: preview.voiceName,
                 audioUrl: preview.audioFileUrl,
