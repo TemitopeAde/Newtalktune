@@ -38,7 +38,7 @@ function getProperVoiceName(voiceId: string): string {
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { voiceId: string } }
+    { params }: { params: Promise<{ voiceId: string }> }
 ) {
     try {
         const { voiceId } = await params;
