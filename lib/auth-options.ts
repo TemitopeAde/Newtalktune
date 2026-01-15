@@ -44,7 +44,7 @@ export const authOptions: AuthOptions = {
                                 providerAccountId: account.providerAccountId,
                             },
                         },
-                    });
+                    })
 
                     if (!existingAccount) {
                         await prisma.account.create({
