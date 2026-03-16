@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/adesiyantemitope/Documents/Next/Talktune/talktune-webapp remote set-url origin https://github.com/TemitopeAde/Newtalktune.git)",
+      "Bash(git -C /Users/adesiyantemitope/Documents/Next/Talktune/talktune-webapp remote -v)",
+      "Bash(git -C /Users/adesiyantemitope/Documents/Next/Talktune/talktune-webapp push -u origin fix/google)"
+    ]
+  }
+}

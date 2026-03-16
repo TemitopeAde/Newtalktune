@@ -1,7 +1,7 @@
 "use client";
 
 import { Talktune } from "@/constants/Icons";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
@@ -101,7 +101,6 @@ const DashboardNavbar = () => {
         </div>
       </Link>
       <div className="flex items-center space-x-4">
-        <Search className="w-6 h-6 text-slate-700" />
         <Sheet>
           <SheetTrigger>
             <div className="relative">

@@ -188,7 +188,7 @@ export async function sendContactConfirmationEmail(
 
               <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">
                 © ${new Date().getFullYear()} TalkTune. All rights reserved.<br>
-                Use 6 Olaosebikan street, Shomolu
+                6 Olaosebikan street, Shomolu
               </p>
             </div>
           </body>
