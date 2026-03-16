@@ -26,11 +26,11 @@ const Footer = () => {
               Pricing
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link href={"/blogs"} className="font-medium text-base text-foreground">
               Blog
             </Link>
-          </li>
+          </li> */}
         </ul>
         <div className="flex items-center space-x-6">
           {/* <Link target="_blank" href={""}>
