@@ -7,8 +7,23 @@ import { cookies } from "next/headers";
 import type { AuthOptions } from "next-auth";
 import type { PrismaClient } from "@prisma/client";
 
+const baseAdapter = PrismaAdapter(prisma as unknown as PrismaClient);
+
+const customAdapter = {
+    ...baseAdapter,
+    createUser: async (data: Parameters<NonNullable<typeof baseAdapter.createUser>>[0]) => {
+        const { emailVerified, ...rest } = data as any;
+        return prisma.user.create({
+            data: {
+                ...rest,
+                isVerified: true,
+            },
+        });
+    },
+};
+
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(prisma as unknown as PrismaClient),
+    adapter: customAdapter,
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
