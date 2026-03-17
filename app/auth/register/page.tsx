@@ -171,7 +171,7 @@ function RegisterForm() {
         <p className="text-red-500 text-sm mt-1">{fieldErrors.name[0]}</p>
       )}
 
-      <div className="flex gap-3 w-full">
+      <div className="flex gap-3 w-full overflow-hidden">
         <CountrySelect
           countries={countries || []}
           valueCode={selectedCountry}
@@ -192,7 +192,7 @@ function RegisterForm() {
           name="phoneNumber"
           value={formData.phoneNumber}
           onChange={handleInputChange}
-          containerclassname="ring-0 border-0 flex-1"
+          containerclassname="ring-0 border-0 flex-1 min-w-0"
           className="flex-1 border-0 ring-0"
           required={false}
         />
