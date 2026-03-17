@@ -146,7 +146,7 @@ function RegisterForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full md:max-w-lg flex-col px-4 items-start justify-center py-10 gap-6"
+      className="flex w-full max-w-lg flex-col px-4 mx-auto items-start justify-center py-10 gap-6"
       noValidate
     >
       <h1 className="text-4xl font-bold">Sign Up</h1>
