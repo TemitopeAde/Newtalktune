@@ -182,7 +182,7 @@ const Page = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 overflow-y-auto min-h-[90vh] md:min-h-screen">
+    <div className="p-4 pb-24 md:p-6 md:pb-6 overflow-y-auto min-h-[90vh] md:min-h-screen">
       <div className="w-full mx-auto">
         <div className="flex justify-between md:items-center items-start flex-col  md:flex-row mb-12">
           <div className="flex items-center md:space-x-4 md:flex-row flex-col">
