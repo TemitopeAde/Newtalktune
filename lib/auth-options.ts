@@ -13,7 +13,7 @@ const customAdapter = {
     ...baseAdapter,
     createUser: async (data: Parameters<NonNullable<typeof baseAdapter.createUser>>[0]) => {
         console.log("[AUTH] createUser called with data:", JSON.stringify(data, null, 2));
-        const { emailVerified, ...rest } = data as any;
+        const { emailVerified, image, ...rest } = data as any;
         console.log("[AUTH] createUser rest (emailVerified stripped):", JSON.stringify(rest, null, 2));
         try {
             const newUser = await prisma.user.create({
