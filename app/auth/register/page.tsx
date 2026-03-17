@@ -276,7 +276,7 @@ function RegisterForm() {
           htmlFor="agree-terms"
           className="text-sm text-gray-300 leading-relaxed"
         >
-          By clicking on "Signup" you acknowledge that you have read the{" "}
+          By clicking on &quot;Signup&quot; you acknowledge that you have read the{" "}
           <Link
             href="/privacy-policy"
             className="text-white underline hover:text-gray-100"
