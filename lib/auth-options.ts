@@ -12,13 +12,22 @@ const baseAdapter = PrismaAdapter(prisma as unknown as PrismaClient);
 const customAdapter = {
     ...baseAdapter,
     createUser: async (data: Parameters<NonNullable<typeof baseAdapter.createUser>>[0]) => {
-        const { emailVerified, ...rest } = data as any;
-        return prisma.user.create({
-            data: {
-                ...rest,
-                isVerified: true,
-            },
-        });
+        console.log("[AUTH] createUser called with data:", JSON.stringify(data, null, 2));
+        const { emailVerified, image, ...rest } = data as any;
+        console.log("[AUTH] createUser rest (emailVerified stripped):", JSON.stringify(rest, null, 2));
+        try {
+            const newUser = await prisma.user.create({
+                data: {
+                    ...rest,
+                    isVerified: true,
+                },
+            });
+            console.log("[AUTH] createUser success, new user id:", newUser.id);
+            return newUser;
+        } catch (err) {
+            console.error("[AUTH] createUser ERROR:", err);
+            throw err;
+        }
     },
 };
 
@@ -40,7 +49,10 @@ export const authOptions: AuthOptions = {
     },
     callbacks: {
         async signIn({ user, account, profile }) {
+            console.log("[AUTH] signIn callback - user:", user?.email, "provider:", account?.provider);
+
             if (!user.email) {
+                console.log("[AUTH] signIn blocked - no email");
                 return false;
             }
 
@@ -48,6 +60,8 @@ export const authOptions: AuthOptions = {
             const existingUser = await prisma.user.findUnique({
                 where: { email: user.email },
             });
+
+            console.log("[AUTH] signIn - existingUser found:", !!existingUser, "id:", existingUser?.id);
 
             if (existingUser) {
                 // If user exists but signed up with email/password, link the OAuth account
@@ -61,7 +75,10 @@ export const authOptions: AuthOptions = {
                         },
                     })
 
+                    console.log("[AUTH] signIn - existingAccount found:", !!existingAccount);
+
                     if (!existingAccount) {
+                        console.log("[AUTH] signIn - linking new OAuth account for existing user");
                         await prisma.account.create({
                             data: {
                                 userId: existingUser.id,
@@ -80,13 +97,15 @@ export const authOptions: AuthOptions = {
                     }
                 }
             } else {
-                // Create new user for OAuth sign-in
-                // The adapter will handle this automatically
+                // New user - createUser will be called by the adapter after this returns true
+                console.log("[AUTH] signIn - new user, adapter will call createUser after this");
             }
 
+            console.log("[AUTH] signIn returning true");
             return true;
         },
         async session({ session, user }) {
+            console.log("[AUTH] session callback - user.id:", user?.id, "typeof:", typeof user?.id);
             if (session.user) {
                 session.user.id = user.id;
 
@@ -103,6 +122,7 @@ export const authOptions: AuthOptions = {
                     },
                 });
 
+                console.log("[AUTH] session callback - dbUser found:", !!dbUser, "isVerified:", dbUser?.isVerified);
                 if (dbUser) {
                     session.user.role = dbUser.role;
                     session.user.subscriptionPlan = dbUser.subscriptionPlan;

@@ -146,7 +146,7 @@ function RegisterForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full md:max-w-lg flex-col px-4 items-start justify-center overflow-y-auto max-sm:py-10 min-h-screen gap-6"
+      className="flex w-full md:max-w-lg flex-col px-4 items-start justify-center py-10 gap-6"
       noValidate
     >
       <h1 className="text-4xl font-bold">Sign Up</h1>
@@ -276,7 +276,7 @@ function RegisterForm() {
           htmlFor="agree-terms"
           className="text-sm text-gray-300 leading-relaxed"
         >
-          By clicking on "Signup" you acknowledge that you have read the{" "}
+          By clicking on &quot;Signup&quot; you acknowledge that you have read the{" "}
           <Link
             href="/privacy-policy"
             className="text-white underline hover:text-gray-100"

@@ -21,7 +21,7 @@ const AuthenticationLayout = ({ children }: { children: React.ReactNode }) => {
           fill
         />
       </div>
-      <div className="flex-1 flex justify-center items-center">
+      <div className="flex-1 flex justify-center items-start overflow-y-auto">
         {/* <AuthModal /> */}
         {children}
       </div>
