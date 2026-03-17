@@ -228,7 +228,7 @@ const Page = () => {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-[#1E2E40] rounded-md max-w-[350px] md:min-w-[380px] md:max-w-[500px] p-8 border-l-2 border-[#8CBE4160]
+              className={`relative bg-[#1E2E40] rounded-md w-full md:min-w-[380px] md:max-w-[500px] p-8 border-l-2 border-[#8CBE4160]
                 hover:border-[#8CBE41] transition-all duration-300`}
             >
               <div className="mb-8">
