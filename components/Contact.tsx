@@ -136,7 +136,7 @@ const Contact = () => {
               <Image src={Pin} alt="Location" height={24} width={24} />
 
               <Link href="" className="">
-                Use 6 Olaosebikan street, Shomolu
+                6 Olaosebikan street, Shomolu
               </Link>
             </div>
           </div>

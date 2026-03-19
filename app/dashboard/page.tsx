@@ -341,7 +341,7 @@ const Page: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 pb-24 md:p-6 md:pb-6">
       <div className="mb-8">
         <h2 className="text-base md:text-2xl font-bold text-white">Explore Our Innovative AI Voice Models</h2>
 
