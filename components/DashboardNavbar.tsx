@@ -35,6 +35,9 @@ const DashboardNavbar = () => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
     useNotifications();
 
+  const notifications = data?.pages.flatMap((page) => page) ?? [];
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   useEffect(() => {
     if (inView) {
       fetchNextPage();
@@ -104,9 +107,11 @@ const DashboardNavbar = () => {
         <Sheet>
           <SheetTrigger>
             <div className="relative">
-              <div className="w-4 h-4 bg-gray-800 absolute rounded-full flex -top-2 -left-2 items-center justify-center">
-                <span className="text-xs">3</span>
-              </div>
+              {unreadCount > 0 && (
+                <div className="w-4 h-4 bg-gray-800 absolute rounded-full flex -top-2 -left-2 items-center justify-center">
+                  <span className="text-xs">{unreadCount}</span>
+                </div>
+              )}
               <Bell className="w-6 h-6 text-slate-700" />
             </div>
           </SheetTrigger>
@@ -120,7 +125,7 @@ const DashboardNavbar = () => {
               <p>Error fetching notifications</p>
             ) : (
               <NotificationPanel
-                notifications={data?.pages.flatMap((page) => page) ?? []}
+                notifications={notifications}
                 isFetchingNextPage={isFetchingNextPage}
                 fetchNextPage={fetchNextPage}
                 hasNextPage={hasNextPage ?? false}
