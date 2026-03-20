@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/providers/SessionProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
-import PageTransitionLayout from "@/components/PageTransitionLayout";
+// import PageTransitionLayout from "@/components/PageTransitionLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +32,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <PageTransitionLayout>
-              {children}
-            </PageTransitionLayout>
+            {children}
           </QueryProvider>
         </SessionProvider>
       </body>

@@ -5,6 +5,7 @@ import PasswordInput from "@/components/inputs/PasswordInput";
 import TextInput from "@/components/inputs/TextInput";
 import Link from "next/link";
 import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { ValidationErrors } from "@/types";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -133,35 +134,51 @@ const Page = () => {
         <p className="text-red-500 text-sm mt-1">{fieldErrors.code[0]}</p>
       )}
 
-      <PasswordInput
-        placeholder="Enter new password"
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        containerclassname="ring-0 border-0 w-full"
-        className="w-full border-0 ring-0"
-        required={false}
-        showPassword={showPassword}
-        onTogglePassword={() => setShowPassword(prev => !prev)}
-      />
+      <div className="relative w-full">
+        <PasswordInput
+          placeholder="Enter new password"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          containerclassname="ring-0 border-0 w-full"
+          className="w-full border-0 ring-0"
+          required={false}
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPassword(prev => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400 p-1"
+        >
+          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      </div>
 
       {fieldErrors.password && (
         <p className="text-red-500 text-sm mt-1">{fieldErrors.password[0]}</p>
       )}
 
-      <PasswordInput
-        placeholder="Confirm password"
-        type="password"
-        name="confirmPassword"
-        value={formData.confirmPassword}
-        onChange={handleInputChange}
-        containerclassname="ring-0 border-0 w-full"
-        className="w-full border-0 ring-0"
-        required={false}
-        showPassword={showConfirmPassword}
-        onTogglePassword={() => setShowConfirmPassword(prev => !prev)}
-      />
+      <div className="relative w-full">
+        <PasswordInput
+          placeholder="Confirm password"
+          type="password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleInputChange}
+          containerclassname="ring-0 border-0 w-full"
+          className="w-full border-0 ring-0"
+          required={false}
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowConfirmPassword(prev => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400 p-1"
+        >
+          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      </div>
       {fieldErrors.confirmPassword && (
         <p className="text-red-500 text-sm mt-1">{fieldErrors.confirmPassword[0]}</p>
       )}

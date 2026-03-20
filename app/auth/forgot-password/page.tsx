@@ -88,7 +88,7 @@ const Page = () => {
       <h1 className="text-4xl font-bold">Forgot Password</h1>
       
       <span className="text-sm text-gray-300 leading-relaxed">
-        Enter your email address and we'll send you instructions to reset your password.
+        Enter your email address and we&apos;ll send you instructions to reset your password.
       </span>
 
       {(formError || success) && (
@@ -140,7 +140,7 @@ const Page = () => {
         </Link>
         
         <span className="text-gray-300">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/auth/register"
             className="text-white hover:text-gray-100 font-medium"

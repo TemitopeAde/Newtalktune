@@ -166,18 +166,27 @@ function LoginForm() {
       )}
 
 
-      <PasswordInput
-        placeholder="Enter password"
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        containerclassname="ring-0 border-0 w-full"
-        className="w-full border-0 ring-0"
-        required={false}
-        showPassword={showPassword}
-        onTogglePassword={() => setShowPassword(prev => !prev)}
-      />
+      <div className="relative w-full">
+        <PasswordInput
+          placeholder="Enter password"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          containerclassname="ring-0 border-0 w-full"
+          className="w-full border-0 ring-0"
+          required={false}
+          showPassword={showPassword}
+          onTogglePassword={() => setShowPassword(prev => !prev)}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(prev => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400 p-1"
+        >
+          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      </div>
       {fieldErrors.password && (
         <p className="text-red-500 text-sm mt-1">{fieldErrors.password[0]}</p>
       )}
@@ -244,7 +253,7 @@ function LoginForm() {
       </div>
 
       <p className="text-sm text-gray-300 font-medium text-right w-full">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link
           href="/auth/register"
           className="text-white hover:text-gray-100 font-medium"

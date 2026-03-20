@@ -189,23 +189,16 @@ const StepOne = React.memo<{
         </div>
 
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
-          <div className="rounded-[8px] p-[1px] bg-gradient-to-r from-[#8CBE41] to-[#0D1E40]">
-            <input
-              ref={projectNameInputRef}
-              type="text"
-              name="add-project"
-              placeholder="Enter project name"
-              value={projectData.name}
-              onChange={handleProjectNameChange}
-              autoComplete="off"
-              className="h-14 w-full px-4 rounded-[7px] text-white placeholder:text-gray-400 outline-none border-none transition-all duration-200 [&:-webkit-autofill]:!bg-[#475569] [&:-webkit-autofill:hover]:!bg-[#475569] [&:-webkit-autofill:focus]:!bg-[#475569] [&:-webkit-autofill:active]:!bg-[#475569]"
-              style={{
-                backgroundColor: '#475569 !important',
-                backgroundImage: 'none !important',
-                boxShadow: 'none !important'
-              }}
-            />
-          </div>
+          <input
+            ref={projectNameInputRef}
+            type="text"
+            name="add-project"
+            placeholder="Enter project name"
+            value={projectData.name}
+            onChange={handleProjectNameChange}
+            autoComplete="off"
+            className="h-14 w-full px-4 rounded-md text-white placeholder:text-gray-400 bg-transparent border border-[#475569] outline-none focus:border-[#8CBE41] focus:ring-0 transition-colors"
+          />
 
           {/* <Select value={projectData.language} onValueChange={handleLanguageChange}>
             <SelectTrigger>
@@ -230,21 +223,14 @@ const StepOne = React.memo<{
 
           {activeTab === "Manual" ? (
             <div>
-              <div className="rounded-[8px] p-[1px] bg-gradient-to-r from-[#8CBE41] to-[#0D1E40]">
-                <Textarea
-                  placeholder="Enter your script (max 2000 characters)"
-                  value={projectData.content}
-                  onChange={handleContentChange}
-                  autoComplete="off"
-                  maxLength={2000}
-                  className="min-h-[170px] rounded-[7px] text-white placeholder:text-gray-400 outline-none border-none transition-all duration-200 [&:-webkit-autofill]:!bg-[#475569] [&:-webkit-autofill:hover]:!bg-[#475569] [&:-webkit-autofill:focus]:!bg-[#475569] [&:-webkit-autofill:active]:!bg-[#475569]"
-                  style={{
-                    backgroundColor: '#475569 !important',
-                    backgroundImage: 'none !important',
-                    boxShadow: 'none !important'
-                  }}
-                />
-              </div>
+              <Textarea
+                placeholder="Enter your script (max 2000 characters)"
+                value={projectData.content}
+                onChange={handleContentChange}
+                autoComplete="off"
+                maxLength={2000}
+                className="min-h-[170px] w-full px-4 py-3 rounded-md text-white placeholder:text-gray-400 bg-transparent border border-[#475569] outline-none resize-none focus:border-[#8CBE41] focus:ring-0 transition-colors"
+              />
               <div className="flex justify-between items-center mt-2 px-1">
 
                 <p className={`text-xs font-medium ${projectData.content.length > 2000
@@ -260,10 +246,11 @@ const StepOne = React.memo<{
           ) : (
             <div>
               <div
-                className={`relative rounded-sm p-8 text-center cursor-pointer transition-colors ${dragActive
-                  ? "bg-green-500/10"
-                  : "bg-white/20 hover:bg-white/25"
-                  }`}
+                className={`relative rounded-md p-8 text-center cursor-pointer border border-[#475569] transition-colors ${
+                  dragActive
+                    ? "bg-white/10 border-[#8CBE41]"
+                    : "bg-transparent hover:bg-white/5"
+                }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
