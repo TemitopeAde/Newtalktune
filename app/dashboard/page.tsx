@@ -528,6 +528,7 @@ const Page: React.FC = () => {
           <button onClick={() => refetch()} className="mt-4 px-6 py-2 bg-white text-slate-900 rounded-sm hover:bg-gray-100">
             Retry
           </button>
+          
         </div>
       ) : scripts.length === 0 ? (
         <div className="rounded-lg border border-[#6b952a] p-12 text-center">
