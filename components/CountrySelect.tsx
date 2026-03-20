@@ -40,9 +40,9 @@ const CountrySelect: React.FC<Props> = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={disabled}>
         <Button
-          variant="outline"
+          variant="ghost"
           className={cn(
-            "h-[48px] min-w-[120px] px-3 justify-between bg-white/20 border border-gray-600 text-white hover:bg-white/30 hover:text-white",
+            "h-[48px] min-w-[120px] px-3 justify-between bg-white/20 border-0 ring-0 text-white hover:bg-white/30 hover:text-white",
             className
           )}
         >

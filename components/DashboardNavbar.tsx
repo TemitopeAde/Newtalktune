@@ -1,7 +1,7 @@
 "use client";
 
 import { Talktune } from "@/constants/Icons";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
@@ -34,6 +34,9 @@ const DashboardNavbar = () => {
   const { ref, inView } = useInView();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
     useNotifications();
+
+  const notifications = data?.pages.flatMap((page) => page) ?? [];
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     if (inView) {
@@ -101,13 +104,14 @@ const DashboardNavbar = () => {
         </div>
       </Link>
       <div className="flex items-center space-x-4">
-        <Search className="w-6 h-6 text-slate-700" />
         <Sheet>
           <SheetTrigger>
             <div className="relative">
-              <div className="w-4 h-4 bg-gray-800 absolute rounded-full flex -top-2 -left-2 items-center justify-center">
-                <span className="text-xs">3</span>
-              </div>
+              {unreadCount > 0 && (
+                <div className="w-4 h-4 bg-gray-800 absolute rounded-full flex -top-2 -left-2 items-center justify-center">
+                  <span className="text-xs">{unreadCount}</span>
+                </div>
+              )}
               <Bell className="w-6 h-6 text-slate-700" />
             </div>
           </SheetTrigger>
@@ -121,7 +125,7 @@ const DashboardNavbar = () => {
               <p>Error fetching notifications</p>
             ) : (
               <NotificationPanel
-                notifications={data?.pages.flatMap((page) => page) ?? []}
+                notifications={notifications}
                 isFetchingNextPage={isFetchingNextPage}
                 fetchNextPage={fetchNextPage}
                 hasNextPage={hasNextPage ?? false}
