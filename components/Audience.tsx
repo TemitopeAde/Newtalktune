@@ -21,23 +21,7 @@ const data = [
     title: "Safe and Secure",
     detail:
       "All projects, personal information and payment details are protected.",
-  },
-  {
-    id: 4,
-    title: "Ease to use",
-    detail: "Making it accessible to both beginners and professionals.",
-  },
-  {
-    id: 5,
-    title: "Engage your Audience",
-    detail: "Effortlessly create marketing voiceovers that captivate.",
-  },
-  {
-    id: 6,
-    title: "Safe and Secure",
-    detail:
-      "All projects, personal information and payment details are protected.",
-  },
+  }
 ];
 
 const Audience = () => {
@@ -60,7 +44,7 @@ const Audience = () => {
   } as const
 
   return (
-    <div className="bg-white py-8 w-full text-black px-6 md:px-[100px] h-full">
+    <div className="bg-white pb-28 pt-28 w-full text-black px-6 md:px-[100px] h-full">
       <h2 className="text-[28px] md:text-[35px] font-bold text-center">
         Transform Your Creations: Authentic <br className="md:flex hidden" />
         Accents, Multilingual Options.

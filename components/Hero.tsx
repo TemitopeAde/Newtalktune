@@ -45,13 +45,13 @@ const Hero = () => {
             category: "YarnGPT",
             gender: "Female",
             accent: "Nigerian",
-            image: "/images/models/Idera - Melodic and Gentle.jpeg"
+            image: "/images/models/idera.png"
           },
           {
             id: "emma",
             name: "Emma",
             category: "YarnGPT",
-            gender: "Female",
+            gender: "Male",
             accent: "Authoritative, deep",
             image: "/images/models/Emma - Authoritative & deep.jpeg"
           },

@@ -533,7 +533,7 @@ const Page: React.FC = () => {
       ) : scripts.length === 0 ? (
         <div className="rounded-lg border border-[#6b952a] p-12 text-center">
           <p className="text-gray-400 text-lg">No projects found</p>
-          <p className="text-gray-500 text-sm mt-2">Click "Add Voice Over" to create your first project</p>
+          <p className="text-gray-500 text-sm mt-2">Click &quot;Add Voice Over&quot; to create your first project</p>
         </div>
       ) : (
         <>

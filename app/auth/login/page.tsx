@@ -8,7 +8,8 @@ import { Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useLogin } from "@/hooks/auth/useAuth";
 import { useUserStore } from "@/store/useUserStore";
 import { ValidationErrors } from "@/types";
@@ -60,6 +61,8 @@ function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -82,6 +85,11 @@ function LoginForm() {
     setFieldErrors({});
     setFormError("");
 
+    if (!turnstileToken) {
+      setFormError("Please complete the CAPTCHA verification");
+      return;
+    }
+
     try {
       const validatedData = loginSchema.safeParse(formData);
       if (!validatedData.success) {
@@ -97,7 +105,7 @@ function LoginForm() {
         return;
       }
 
-      const result = await login(validatedData.data);
+      const result = await login({ ...validatedData.data, cfTurnstileToken: turnstileToken } as LoginInput);
 
       // Check if there's an error in the result
       if (result.result?.error) {
@@ -124,6 +132,8 @@ function LoginForm() {
       console.error('Login error:', err);
       const errorMessage = err?.message || 'An unexpected error occurred';
       setFormError(errorMessage);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
   };
 
@@ -190,6 +200,14 @@ function LoginForm() {
         </Link>
       </div>
 
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+        onSuccess={(token) => setTurnstileToken(token)}
+        onExpire={() => setTurnstileToken(null)}
+        onError={() => setTurnstileToken(null)}
+      />
+
       <PrimaryBtn
         label={
           isPending ? (
@@ -202,7 +220,7 @@ function LoginForm() {
           )
         }
         containerclass="w-full cursor-pointer"
-        disabled={isPending}
+        disabled={isPending || !turnstileToken}
         type="submit"
       />
 

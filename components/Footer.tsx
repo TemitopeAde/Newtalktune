@@ -48,7 +48,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="flex md:flex-row flex-col justify-center gap-6 mt-4 w-full items-start md:items-center">
-        <span>&copy; 2025 Talktune. All rights reserved</span>
+        <span>&copy; {new Date().getFullYear()} Talktune. All rights reserved</span>
         <div className="flex justify-start items-center flex-wrap gap-4">
           <Link href={"#"} className="underline">
             Privacy Policy

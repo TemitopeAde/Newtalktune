@@ -279,7 +279,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
     if (voiceModelId) {
       // YarnGPT Voice Models
       const voiceModels = [
-        { id: "idera", image: "/images/models/Idera - Melodic and Gentle.jpeg" },
+        { id: "idera", image: "/images/models/idera.png" },
         { id: "emma", image: "/images/models/Emma - Authoritative & deep.jpeg" },
         { id: "zainab", image: "/images/models/Zainab - soothing & gentle.jpeg" },
         { id: "osagie", image: "/images/models/Osagie - smooth & calm.jpeg" },
