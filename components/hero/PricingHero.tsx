@@ -3,60 +3,53 @@
 import { Spiral } from "@/constants/Icons";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeftCircle, ArrowRightCircle, Check } from "lucide-react";
+import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanCard } from "../PlanCard";
 import { motion } from "framer-motion";
 
 const basePlans = [
   {
+    key: "free",
+    title: "Free Plan",
+    subtitle: "Get started with no commitment.",
+    monthlyPrice: 0,
+    features: [
+      "Up to 150 characters per voiceover",
+      "300 characters total per month",
+      "Access to voice models until your monthly limit is reached",
+      "Usage reminders when you're approaching your limit",
+    ],
+  },
+  {
     key: "creator",
     title: "Creator Plan",
     subtitle: "Great for regular content creators.",
-    monthlyPrice: 8,
+    monthlyPrice: 10,
     features: [
-      "Up to 50 voiceovers per month",
-      "Access to full voice library",
-      "Script limit: 2,500 characters",
-      "Auto-optimize audio for Instagram/TikTok/YouTube length.",
+      "Up to 1,500 characters per voiceover",
+      "174,000 characters total per month",
+      "Access to all voice models until your monthly limit is reached",
+      "Auto-optimise audio length for Instagram, TikTok, and YouTube",
     ],
   },
   {
     key: "pro",
     title: "Pro Plan",
     subtitle: "Professional tools for high-quality audio.",
-    monthlyPrice: 13,
+    monthlyPrice: 17,
     features: [
-      "Unlimited voiceovers",
-      "Priority processing",
-      "Advanced editing & custom tone/emotion",
-      "Multi-language & accent support",
-      "AI scriptwriting assistant (basic)",
-      "Multi-format export: MP3, WAV, and direct export to video editors (Canva, CapCut, etc.).",
-      "Script limit: 5,000 characters",
-    ],
-  },
-  {
-    key: "business",
-    title: "Business Plan",
-    subtitle: "For teams and businesses.",
-    monthlyPrice: 48,
-    features: [
-      "Everything in Pro",
-      "Team collaboration (multi-user access)",
-      "Background music integration",
-      "API access for integrations",
-      "Advanced analytics & usage reports",
-      "Script limit: 10,000 characters",
-      "Premium customer support",
-      "Collaboration features: Commenting, approvals, and version history.",
+      "Up to 5,000 characters per voiceover",
+      "Unlimited voiceovers with no monthly cap",
+      "Advanced editing with custom tone and emotion controls",
+      "Multi-format export: MP3, WAV, and direct export to Canva, CapCut, and more",
     ],
   },
 ];
 
 const PricingHero = () => {
   const [tab, setTab] = useState<"monthly" | "yearly">("monthly");
-  const [plan, setPlan] = useState("creator");
+  const [plan, setPlan] = useState("free");
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -117,11 +110,23 @@ const PricingHero = () => {
   }, []);
 
   const plans = basePlans.map((basePlan) => {
-    const displayPrice = tab === "monthly" ? basePlan.monthlyPrice : basePlan.monthlyPrice * 12;
-    const displayPeriod = tab === "monthly" ? "mo" : "yr";
-    const alternative = tab === "monthly" 
-      ? `or $${basePlan.monthlyPrice * 12} yearly` 
-      : `or $${basePlan.monthlyPrice} monthly`;
+    if (basePlan.monthlyPrice === 0) {
+      return {
+        ...basePlan,
+        price: "$0",
+        yearly: tab === "yearly" ? "$0 / yr" : "Always free",
+      };
+    }
+
+    // 2 months free on yearly: charge for 10 months instead of 12
+    const yearlyPrice = basePlan.monthlyPrice * 10;
+    const displayPrice =
+      tab === "monthly" ? basePlan.monthlyPrice : yearlyPrice;
+    const alternative =
+      tab === "monthly"
+        ? `or $${yearlyPrice}/yr — save $${basePlan.monthlyPrice * 2}`
+        : `or $${basePlan.monthlyPrice}/mo`;
+
     return {
       ...basePlan,
       price: `$${displayPrice}`,
@@ -148,7 +153,7 @@ const PricingHero = () => {
   } as const;
 
   return (
-    <section className="relative rounded-b-[64px] pt-[200px]  bg-background pb-20 h-full flex w-full px-6 md:px-[100px] overflow-hidden justify-center items-center flex-col text-white">
+    <section className="relative rounded-b-[64px] pt-[200px] bg-background pb-20 h-full flex w-full px-6 md:px-[100px] overflow-hidden justify-center items-center flex-col text-white">
       <div className="absolute w-full -bottom-20 justify-end flex items-end h-[600px]">
         <Image src={Spiral} alt="Spiral" fill className="object-cover" />
       </div>
@@ -188,11 +193,11 @@ const PricingHero = () => {
           </button>
         </div>
       </div>
+
       <div className="relative w-full max-w-6xl">
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          // whileInView="show"
           viewport={{ once: true, amount: 0.2 }}
           ref={scrollRef}
           className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth gap-4 px-4 lg:grid lg:grid-cols-3 lg:overflow-visible"

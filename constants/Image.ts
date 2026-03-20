@@ -16,7 +16,7 @@ import features3 from "../public/images/features/3.png";
 import features4 from "../public/images/features/4.png";
 import features5 from "../public/images/features/5.png";
 import features6 from "../public/images/features/6.png";
-import AuthBanner from "../public/images/banner.png";
+import AuthBanner from "../public/images/banner.jpg";
 
 export {
   Spiral,

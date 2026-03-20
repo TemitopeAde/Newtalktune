@@ -221,7 +221,7 @@ const Page = () => {
           </div>
           <div
             onClick={() => onOpen("modal", <Preferences />)}
-            className="border-l cursor-pointer border-accent-foreground rounded-sm flex bg-[#2D3E4280] items-center space-x-2 px-4 py-2.5"
+            className="border-l cursor-pointer border-accent-foreground rounded-sm flex bg-[#2D3E4280] items-center space-x-2 px-4 py-2.5 hidden"
           >
             <Bell />
             <span className="font-medium text-sm">Preference</span>
