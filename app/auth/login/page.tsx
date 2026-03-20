@@ -13,7 +13,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useLogin } from "@/hooks/auth/useAuth";
 import { useUserStore } from "@/store/useUserStore";
 import { ValidationErrors } from "@/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { signIn, useSession } from "next-auth/react";
 
