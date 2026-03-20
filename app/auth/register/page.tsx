@@ -7,7 +7,8 @@ import Checkbox from "@/components/ui/checkbox";
 import { Google } from "@/constants/Icons";
 import Image from "next/image";
 import Link from "next/link";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useRouter, useSearchParams } from "next/navigation";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { useRegister } from "@/hooks/auth/useAuth";
@@ -44,6 +45,8 @@ function RegisterForm() {
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const { data: countries, isLoading: isLoadingCountries } = useCountries();
 
   useEffect(() => {
@@ -104,6 +107,11 @@ function RegisterForm() {
       return;
     }
 
+    if (!turnstileToken) {
+      setFormError("Please complete the CAPTCHA verification");
+      return;
+    }
+
     try {
       // Remove the "+" from country code before validation and submission
       const dataToValidate = {
@@ -127,19 +135,21 @@ function RegisterForm() {
         return;
       }
 
-      const result = await register(validatedData.data);
+      const result = await register({ ...validatedData.data, cfTurnstileToken: turnstileToken } as typeof validatedData.data);
 
       setEmail(formData.email);
       router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Form submission error:', err);
 
-      const errorMessage = err?.message ||
-        err?.error ||
-        (typeof err === 'string' ? err : 'An unexpected error occurred');
+      const errorMessage = err instanceof Error
+        ? err.message
+        : (typeof err === 'string' ? err : 'An unexpected error occurred');
 
       setFormError(errorMessage);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
   };
 
@@ -287,6 +297,14 @@ function RegisterForm() {
         </label>
       </div>
 
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+        onSuccess={(token) => setTurnstileToken(token)}
+        onExpire={() => setTurnstileToken(null)}
+        onError={() => setTurnstileToken(null)}
+      />
+
       <PrimaryBtn
         label={
           isPending ? (
@@ -299,7 +317,7 @@ function RegisterForm() {
           )
         }
         containerclass="w-full cursor-pointer"
-        disabled={!agreeToTerms || isPending}
+        disabled={!agreeToTerms || isPending || !turnstileToken}
         type="submit"
       />
 
