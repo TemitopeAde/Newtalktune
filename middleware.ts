@@ -15,7 +15,8 @@ export function middleware(req: NextRequest) {
         "/blogs",
         "/contact",
         "/pricing",
-        "/collaboration-demo"
+        "/collaboration-demo",
+        "/admin/contact-messages"
     ];
 
     // Check if the current path is a public route

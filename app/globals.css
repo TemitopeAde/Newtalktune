@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tiptap editor styles */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #64748b;
+  pointer-events: none;
+  height: 0;
+}
+.tiptap:focus {
+  outline: none;
+}
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+}
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+}
+.tiptap strong {
+  font-weight: 700;
+}
+.tiptap em {
+  font-style: italic;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }

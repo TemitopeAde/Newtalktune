@@ -109,7 +109,7 @@ const Page: React.FC = () => {
             category: "YarnGPT",
             gender: "Female",
             accent: "Nigerian",
-            image: "/images/models/Idera - Melodic and Gentle.jpeg"
+            image: "/images/models/idera.png"
           },
           {
             id: "emma",
