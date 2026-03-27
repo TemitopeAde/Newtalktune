@@ -44,10 +44,21 @@
 import { confirmOTP } from "@/actions/confirmOtp"
 import { NextRequest, NextResponse } from "next/server"
 import { StatusCodes } from 'http-status-codes'
+import { rateLimit } from '@/lib/rate-limit'
 
 
 
 export async function POST(request: NextRequest) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ??
+               request.headers.get('x-real-ip') ?? 'unknown'
+    const { success: allowed, retryAfter } = rateLimit(`confirm-otp:${ip}`, 10, 15 * 60 * 1000)
+    if (!allowed) {
+        return NextResponse.json(
+            { error: 'Too many requests. Please try again later.' },
+            { status: StatusCodes.TOO_MANY_REQUESTS, headers: { 'Retry-After': String(retryAfter) } }
+        )
+    }
+
     try {
         const { email, otp } = await request.json()
 

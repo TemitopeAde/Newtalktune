@@ -215,7 +215,7 @@ export async function sendContactNotificationToAdmin(
         name: "TalkTune",
         email: process.env.MAILTRAP_SENDER_EMAIL || "hello@talktune.org"
       },
-      to: [{ email: "support@talktune.org" }],
+      to: [{ email: "talktuneng@gmail.com" }],
       subject: `New Contact Form Submission from ${userName}`,
       html: `
         <!DOCTYPE html>
@@ -259,5 +259,69 @@ export async function sendContactNotificationToAdmin(
   } catch (error) {
     console.error('Error sending admin notification email:', error);
     throw new Error('Failed to send admin notification');
+  }
+}
+
+export async function sendAdminReplyEmail(
+  userEmail: string,
+  userName: string,
+  originalMessage: string,
+  reply: string
+) {
+  try {
+    const response = await mailtrap.send({
+      from: {
+        name: "TalkTune Support",
+        email: process.env.MAILTRAP_SENDER_EMAIL || "hello@talktune.pro",
+      },
+      to: [{ email: userEmail }],
+      subject: "Re: Your message to TalkTune",
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reply from TalkTune</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">Reply from TalkTune</h1>
+            </div>
+
+            <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;">
+              <h2 style="color: #333; margin-top: 0;">Hi ${userName},</h2>
+
+              <div style="background: white; border-left: 4px solid #667eea; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0; color: #333;">
+                ${reply}
+              </div>
+
+              <div style="background: #f0f0f0; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0 0 8px 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Your original message</p>
+                <p style="margin: 0; font-size: 14px; color: #666; white-space: pre-wrap;">${originalMessage}</p>
+              </div>
+
+              <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                If you have any further questions, feel free to reply to this email or contact us again at
+                <a href="https://talktune.pro/contact" style="color: #667eea; text-decoration: none;">talktune.pro/contact</a>.
+              </p>
+
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+              <p style="font-size: 12px; color: #999; text-align: center;">
+                &copy; ${new Date().getFullYear()} TalkTune. All rights reserved.<br>
+                Lagos, Nigeria
+              </p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+
+    console.log('Admin reply email sent:', response.message_ids);
+    return { success: true, messageId: response.message_ids[0] };
+  } catch (error) {
+    console.error('Error sending admin reply email:', error);
+    throw new Error('Failed to send reply email');
   }
 }

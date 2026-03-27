@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { register } from '@/actions/register'
 import { StatusCodes } from 'http-status-codes'
+import { rateLimit } from '@/lib/rate-limit'
 
 type RegisterResponse = {
   error?: string;
@@ -45,6 +46,16 @@ type RegisterResponse = {
  *     }
  */
 export async function POST(request: NextRequest) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ??
+               request.headers.get('x-real-ip') ?? 'unknown'
+    const { success: allowed, retryAfter } = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000)
+    if (!allowed) {
+        return NextResponse.json(
+            { error: 'Too many requests. Please try again later.' },
+            { status: StatusCodes.TOO_MANY_REQUESTS, headers: { 'Retry-After': String(retryAfter) } }
+        )
+    }
+
     try {
         const { cfTurnstileToken, ...body } = await request.json()
 
