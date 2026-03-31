@@ -40,6 +40,13 @@ select:focus-within {
   background: transparent !important
 }
 
+/* Prevent iOS Safari from zooming on input focus */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 @layer base {
   :root {
     --background: #0f1e3e;
