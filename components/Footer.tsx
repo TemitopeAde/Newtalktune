@@ -50,10 +50,10 @@ const Footer = () => {
       <div className="flex md:flex-row flex-col justify-center gap-6 mt-4 w-full items-start md:items-center">
         <span>&copy; 2025 Talktune. All rights reserved</span>
         <div className="flex justify-start items-center flex-wrap gap-4">
-          <Link href={"#"} className="underline">
+          <Link href={"/privacy-policy"} className="underline">
             Privacy Policy
           </Link>
-          <Link href={"#"} className="underline">
+          <Link href={"/terms-and-conditions"} className="underline">
             Terms of Service
           </Link>
           <Link href={"#"} className="underline">

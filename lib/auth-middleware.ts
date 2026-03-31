@@ -1,4 +1,3 @@
-// lib/auth-middleware.ts
 import { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/jwt'

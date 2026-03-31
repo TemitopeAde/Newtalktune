@@ -3,7 +3,7 @@
 import "react-circular-progressbar/dist/styles.css";
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { ChevronDown, Upload, Play, ChevronLeft, ChevronRight, Pause } from "lucide-react";
+import { ChevronDown, Upload, Play, ChevronLeft, ChevronRight, Pause, AlertTriangle, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { Textarea } from "./ui/textarea";
 import PrimaryBtn from "./buttons/PrimaryBtn";
@@ -11,18 +11,39 @@ import ProgressSlider from "./ProgressSlider";
 import { buildStyles, CircularProgressbar } from "react-circular-progressbar";
 import { useStore } from "@/hooks/useStore";
 import { useUploadScript } from "@/hooks/scripts/useScript";
-import { generateAudio } from "@/actions/generateAudio";
 import EditProject from "./EditProject";
-import { Script, VoiceModel, VoiceSettings } from "@/types"
+import { Script, VoiceModel, VoiceSettings } from "@/types";
 import { toast } from "sonner";
 import { translateText } from "@/utils/translate";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-const percentage = 66;
+// ─── Plan limits (mirrors constants/plans.ts) ────────────────────────────────
+const PLAN_SCRIPT_LIMITS: Record<string, number> = {
+  free: 150,
+  creator: 1500,
+  pro: 5000,
+};
 
-const tabs = [
-  { id: "Manual", label: "Manual" },
-  { id: "Upload", label: "Upload" },
-];
+const PLAN_MONTHLY_LIMITS: Record<string, number | null> = {
+  free: 300,
+  creator: 174000,
+  pro: null,
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface SubscriptionData {
+  plan: {
+    id: string;
+    name: string;
+    monthlyPrice: number;
+  };
+  usage: {
+    charactersUsed: number;
+    monthlyLimit: number | null;
+    isUnlimited: boolean;
+  };
+}
 
 interface ProjectData {
   name: string;
@@ -33,16 +54,6 @@ interface ProjectData {
   voiceSettings: VoiceSettings;
 }
 
-interface ApiVoiceModel {
-  id: string;
-  name: string;
-  category: string;
-  gender: string;
-  age: string;
-  accent: string;
-  previewUrl: string;
-}
-
 interface VoiceModelDisplay {
   id: string;
   name: string;
@@ -50,29 +61,40 @@ interface VoiceModelDisplay {
   image?: string;
 }
 
-// Move components outside to prevent re-creation on each render
+interface UploadScriptProps {
+  selectedVoiceModelId?: string;
+  userId: number;
+  subscription: SubscriptionData | null;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 const ProgressBar = React.memo<{ step: number }>(({ step }) => (
   <div className="flex items-center justify-center mb-8">
     {[1, 2, 3, 4].map((i) => (
       <React.Fragment key={i}>
         <div
-          className={`h-1 w-16 rounded-full ${i <= step
-            ? "bg-gradient-to-r from-[#8CBE41] to-background"
-            : "bg-white"
-            }`}
+          className={`h-1 w-16 rounded-full ${
+            i <= step
+              ? "bg-gradient-to-r from-[#8CBE41] to-background"
+              : "bg-white"
+          }`}
         />
         {i < 4 && <div className="w-4" />}
       </React.Fragment>
     ))}
   </div>
 ));
+ProgressBar.displayName = "ProgressBar";
 
 const ScrollIndicator = React.memo<{ show: boolean }>(({ show }) => (
   <div
-    className={`absolute bottom-0 left-0 right-0 h-20 pointer-events-none transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'
-      }`}
+    className={`absolute bottom-0 left-0 right-0 h-20 pointer-events-none transition-opacity duration-300 ${
+      show ? "opacity-100" : "opacity-0"
+    }`}
     style={{
-      background: 'linear-gradient(to top, rgba(13, 30, 64, 0.95), transparent)'
+      background:
+        "linear-gradient(to top, rgba(13, 30, 64, 0.95), transparent)",
     }}
   >
     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
@@ -81,7 +103,29 @@ const ScrollIndicator = React.memo<{ show: boolean }>(({ show }) => (
     </div>
   </div>
 ));
+ScrollIndicator.displayName = "ScrollIndicator";
 
+// Upgrade banner shown when a limit is hit
+const UpgradeBanner = React.memo<{ message: string; onUpgrade: () => void }>(
+  ({ message, onUpgrade }) => (
+    <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3">
+      <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-amber-300 text-sm">{message}</p>
+        <button
+          onClick={onUpgrade}
+          className="flex items-center gap-1 text-[#8CBE41] text-sm font-semibold mt-1 hover:text-[#a8ef43] transition-colors"
+        >
+          Upgrade your plan
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+);
+UpgradeBanner.displayName = "UpgradeBanner";
+
+// ─── Step One ─────────────────────────────────────────────────────────────────
 const StepOne = React.memo<{
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -96,6 +140,10 @@ const StepOne = React.memo<{
   error: string | null;
   setCurrentStep: (step: number) => void;
   projectNameInputRef: React.RefObject<HTMLInputElement | null>;
+  scriptLimit: number;
+  remainingMonthly: number | null;
+  isUnlimited: boolean;
+  onUpgrade: () => void;
 }>(({
   activeTab,
   setActiveTab,
@@ -109,48 +157,55 @@ const StepOne = React.memo<{
   dragActive,
   error,
   setCurrentStep,
-  projectNameInputRef
+  projectNameInputRef,
+  scriptLimit,
+  remainingMonthly,
+  isUnlimited,
+  onUpgrade,
 }) => {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Only focus on mount, not on every render
   useEffect(() => {
     if (projectNameInputRef.current && !projectData.name) {
       projectNameInputRef.current.focus();
     }
-  }, []); // Empty dependency array - only run on mount
+  }, []);
 
-  // Scroll detection
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
-
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setShowScrollIndicator(!isNearBottom);
+      setShowScrollIndicator(scrollHeight - scrollTop - clientHeight >= 50);
     };
-
-    // Check initially if content is scrollable
     const checkScrollable = () => {
       const { scrollHeight, clientHeight } = scrollContainer;
-      if (scrollHeight <= clientHeight) {
-        setShowScrollIndicator(false);
-      } else {
-        setShowScrollIndicator(true);
-      }
+      setShowScrollIndicator(scrollHeight > clientHeight);
     };
-
     checkScrollable();
-    scrollContainer.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', checkScrollable);
-
+    scrollContainer.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkScrollable);
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkScrollable);
+      scrollContainer.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkScrollable);
     };
   }, [activeTab, projectData]);
+
+  const contentLength = projectData.content.length;
+  const isOverScriptLimit = contentLength > scriptLimit;
+  const isMonthlyExhausted = !isUnlimited && remainingMonthly !== null && remainingMonthly <= 0;
+
+  const charCountColor = isOverScriptLimit
+    ? "text-red-400"
+    : contentLength > scriptLimit * 0.9
+    ? "text-yellow-400"
+    : "text-gray-400";
+
+  const tabs = [
+    { id: "Manual", label: "Manual" },
+    { id: "Upload", label: "Upload" },
+  ];
 
   return (
     <div className="w-full mx-auto flex-1 h-full flex flex-col overflow-hidden">
@@ -167,20 +222,21 @@ const StepOne = React.memo<{
           </div>
           <div className="flex relative bg-gray-700 rounded-sm p-1">
             <div
-              className={`absolute top-1 bottom-1 bg-white rounded-sm transition-all duration-300 ease-in-out ${activeTab === "Manual"
-                ? "left-1 right-1/2 mr-0.5"
-                : "right-1 left-1/2 ml-0.5"
-                }`}
+              className={`absolute top-1 bottom-1 bg-white rounded-sm transition-all duration-300 ease-in-out ${
+                activeTab === "Manual"
+                  ? "left-1 right-1/2 mr-0.5"
+                  : "right-1 left-1/2 ml-0.5"
+              }`}
             />
-
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative z-10 px-4 py-2 text-sm rounded-sm transition-colors duration-300 ${activeTab === tab.id
-                  ? "text-gray-900"
-                  : "text-gray-300 hover:text-white"
-                  }`}
+                className={`relative z-10 px-4 py-2 text-sm rounded-sm transition-colors duration-300 ${
+                  activeTab === tab.id
+                    ? "text-gray-900"
+                    : "text-gray-300 hover:text-white"
+                }`}
               >
                 {tab.label}
               </button>
@@ -188,7 +244,33 @@ const StepOne = React.memo<{
           </div>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-6"
+        >
+          {/* Monthly limit exhausted banner */}
+          {isMonthlyExhausted && (
+            <UpgradeBanner
+              message={`You've used all ${remainingMonthly === 0 ? "your" : ""} monthly characters on your current plan.`}
+              onUpgrade={onUpgrade}
+            />
+          )}
+
+          {/* Monthly usage indicator */}
+          {!isUnlimited && remainingMonthly !== null && remainingMonthly > 0 && (
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-slate-400">Monthly characters remaining</span>
+              <span
+                className={cn(
+                  "font-medium",
+                  remainingMonthly < 500 ? "text-amber-400" : "text-slate-300"
+                )}
+              >
+                {remainingMonthly.toLocaleString()}
+              </span>
+            </div>
+          )}
+
           <input
             ref={projectNameInputRef}
             type="text"
@@ -200,47 +282,25 @@ const StepOne = React.memo<{
             className="h-14 w-full px-4 rounded-md text-white placeholder:text-gray-400 bg-transparent border border-[#475569] outline-none focus:border-[#8CBE41] focus:ring-0 transition-colors"
           />
 
-          {/* <Select value={projectData.language} onValueChange={handleLanguageChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="english">English</SelectItem>
-              <SelectItem value="french">French</SelectItem>
-              <SelectItem value="spanish">Spanish</SelectItem>
-              <SelectItem value="german">German</SelectItem>
-              <SelectItem value="italian">Italian</SelectItem>
-              <SelectItem value="portuguese">Portuguese</SelectItem>
-              <SelectItem value="chinese">Chinese</SelectItem>
-              <SelectItem value="arabic">Arabic</SelectItem>
-              <SelectItem value="hindi">Hindi</SelectItem>
-              <SelectItem value="hausa">Hausa</SelectItem>
-              <SelectItem value="japanese">Japanese</SelectItem>
-              <SelectItem value="korean">Korean</SelectItem>
-              <SelectItem value="russian">Russian</SelectItem>
-            </SelectContent>
-          </Select> */}
-
           {activeTab === "Manual" ? (
             <div>
               <Textarea
-                placeholder="Enter your script (max 2000 characters)"
+                placeholder={`Enter your script (max ${scriptLimit.toLocaleString()} characters)`}
                 value={projectData.content}
                 onChange={handleContentChange}
                 autoComplete="off"
-                maxLength={2000}
+                maxLength={scriptLimit}
                 className="min-h-[170px] w-full px-4 py-3 rounded-md text-white placeholder:text-gray-400 bg-transparent border border-[#475569] outline-none resize-none focus:border-[#8CBE41] focus:ring-0 transition-colors"
               />
               <div className="flex justify-between items-center mt-2 px-1">
-
-                <p className={`text-xs font-medium ${projectData.content.length > 2000
-                  ? 'text-red-400'
-                  : projectData.content.length > 1800
-                    ? 'text-yellow-400'
-                    : 'text-gray-400'
-                  }`}>
-                  {projectData.content.length}/2000
-                </p>
+                <span className={`text-xs font-medium ${charCountColor}`}>
+                  {contentLength.toLocaleString()}/{scriptLimit.toLocaleString()}
+                </span>
+                {isOverScriptLimit && (
+                  <span className="text-red-400 text-xs">
+                    Exceeds your plan limit
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -264,7 +324,6 @@ const StepOne = React.memo<{
                   onChange={handleFileInput}
                   className="hidden"
                 />
-
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-300 mb-2">
                   {projectData.script
@@ -274,15 +333,9 @@ const StepOne = React.memo<{
               </div>
               {projectData.script && projectData.content && (
                 <div className="flex justify-between items-center mt-2 px-1">
-
-                  <p className={`text-xs font-medium ${projectData.content.length > 2000
-                    ? 'text-red-400'
-                    : projectData.content.length > 1800
-                      ? 'text-yellow-400'
-                      : 'text-gray-400'
-                    }`}>
-                    {projectData.content.length}/2000
-                  </p>
+                  <span className={`text-xs font-medium ${charCountColor}`}>
+                    {contentLength.toLocaleString()}/{scriptLimit.toLocaleString()}
+                  </span>
                 </div>
               )}
             </div>
@@ -303,16 +356,26 @@ const StepOne = React.memo<{
             if (!projectData.name.trim()) return;
             if (activeTab === "Manual" && !projectData.content.trim()) return;
             if (activeTab === "Upload" && !projectData.script) return;
+            if (isOverScriptLimit || isMonthlyExhausted) return;
             setCurrentStep(3);
           }}
+          disabled={
+            isOverScriptLimit ||
+            isMonthlyExhausted ||
+            !projectData.name.trim() ||
+            (activeTab === "Manual" && !projectData.content.trim()) ||
+            (activeTab === "Upload" && !projectData.script)
+          }
           containerclass="w-[400px]"
         />
       </div>
       <ScrollIndicator show={showScrollIndicator} />
-    </div >
+    </div>
   );
 });
+StepOne.displayName = "StepOne";
 
+// ─── Step Two ─────────────────────────────────────────────────────────────────
 const StepTwo = React.memo<{
   setCurrentStep: (step: number) => void;
   getVisibleItems: () => any[];
@@ -338,7 +401,7 @@ const StepTwo = React.memo<{
   isLoadingVoices,
   onProceed,
   playingVoiceId,
-  onPlayVoice
+  onPlayVoice,
 }) => {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -346,25 +409,24 @@ const StepTwo = React.memo<{
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
-
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setShowScrollIndicator(!isNearBottom);
+      setShowScrollIndicator(scrollHeight - scrollTop - clientHeight >= 50);
     };
-
     const checkScrollable = () => {
-      const { scrollHeight, clientHeight } = scrollContainer;
-      setShowScrollIndicator(scrollHeight > clientHeight);
+      setShowScrollIndicator(
+        scrollContainerRef.current
+          ? scrollContainerRef.current.scrollHeight >
+              scrollContainerRef.current.clientHeight
+          : false
+      );
     };
-
     checkScrollable();
-    scrollContainer.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', checkScrollable);
-
+    scrollContainer.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkScrollable);
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkScrollable);
+      scrollContainer.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkScrollable);
     };
   }, [voiceModels, isLoadingVoices]);
 
@@ -375,11 +437,14 @@ const StepTwo = React.memo<{
           <h1 className="text-3xl font-bold text-white">Select Voice Model</h1>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6 flex flex-col items-center">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6 flex flex-col items-center"
+        >
           <div className="flex-shrink-0 relative mb-8 w-full">
             {isLoadingVoices ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8CBE41]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8CBE41]" />
               </div>
             ) : voiceModels.length === 0 ? (
               <div className="flex justify-center items-center h-64">
@@ -390,20 +455,19 @@ const StepTwo = React.memo<{
                 {getVisibleItems().map((item) => (
                   <div
                     key={`${item.id}-${item.position}`}
-                    className="absolute transition-all  duration-500 ease-out cursor-pointer"
+                    className="absolute transition-all duration-500 ease-out cursor-pointer"
                     style={getItemStyles(item.position)}
                     onClick={() => {
-                      if (item.position !== 0) {
-                        if (item.position === -1) goToPrevious();
-                        if (item.position === 1) goToNext();
-                      }
+                      if (item.position === -1) goToPrevious();
+                      if (item.position === 1) goToNext();
                     }}
                   >
                     <div
-                      className={`relative rounded-3xl overflow-hidden ${item.position === 0
-                        ? "w-[203px] h-[235px]"
-                        : "w-[177px] h-[191px]"
-                        }`}
+                      className={`relative rounded-3xl overflow-hidden ${
+                        item.position === 0
+                          ? "w-[203px] h-[235px]"
+                          : "w-[177px] h-[191px]"
+                      }`}
                     >
                       <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center relative">
                         {item.image ? (
@@ -415,8 +479,11 @@ const StepTwo = React.memo<{
                             sizes="(max-width: 640px) 100vw, 300px"
                           />
                         ) : (
-                          <span className={`font-bold text-white ${item.position === 0 ? "text-4xl" : "text-3xl"
-                            }`}>
+                          <span
+                            className={`font-bold text-white ${
+                              item.position === 0 ? "text-4xl" : "text-3xl"
+                            }`}
+                          >
                             {item.name
                               .split(" ")
                               .map((n: string) => n[0])
@@ -426,12 +493,9 @@ const StepTwo = React.memo<{
                           </span>
                         )}
                       </div>
-
                       {item.position !== 0 && (
                         <div className="absolute inset-0 bg-black/40" />
                       )}
-
-                      {/* Navigation arrows for active item */}
                       {item.position === 0 && voiceModels.length > 1 && (
                         <>
                           <button
@@ -440,7 +504,6 @@ const StepTwo = React.memo<{
                               goToPrevious();
                             }}
                             className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors border border-white/30 z-10"
-                            title="Previous voice"
                           >
                             <ChevronLeft className="w-5 h-5 text-white" />
                           </button>
@@ -450,7 +513,6 @@ const StepTwo = React.memo<{
                               goToNext();
                             }}
                             className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors border border-white/30 z-10"
-                            title="Next voice"
                           >
                             <ChevronRight className="w-5 h-5 text-white" />
                           </button>
@@ -463,34 +525,23 @@ const StepTwo = React.memo<{
             )}
           </div>
 
-          {/* {!isLoadingVoices && voiceModels.length > 0 && (
-        <div className="flex-shrink-0 flex justify-center mb-8">
-          <div className="flex space-x-2">
-            {voiceModels.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`w-3 h-3 rounded-full transition-colors duration-300 ${activeIndex === index
-                  ? "bg-[#01796F] w-9"
-                  : "bg-gray-600 hover:bg-gray-500"
-                  }`}
-              />
-            ))}
-          </div>
-        </div>
-      )} */}
-
           {!isLoadingVoices && voiceModels.length > 0 && (
             <div className="flex-shrink-0 px-4 mb-6 w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
               <button
-                onClick={() => voiceModels[activeIndex] && onPlayVoice(voiceModels[activeIndex].id)}
+                onClick={() =>
+                  voiceModels[activeIndex] &&
+                  onPlayVoice(voiceModels[activeIndex].id)
+                }
                 disabled={!voiceModels[activeIndex]}
                 className="w-10 h-10 mr-3 flex-shrink-0 bg-black rounded-full flex items-center justify-center transition-colors hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {playingVoiceId === voiceModels[activeIndex]?.id ? (
                   <Pause fill="currentColor" className="w-4 h-4 text-white" />
                 ) : (
-                  <Play fill="currentColor" className="w-4 h-4 text-white ml-0.5" />
+                  <Play
+                    fill="currentColor"
+                    className="w-4 h-4 text-white ml-0.5"
+                  />
                 )}
               </button>
               <ProgressSlider />
@@ -511,43 +562,45 @@ const StepTwo = React.memo<{
     </div>
   );
 });
+StepTwo.displayName = "StepTwo";
 
+// ─── Step Three ───────────────────────────────────────────────────────────────
 const StepThree = React.memo<{
   setCurrentStep: (step: number) => void;
   projectData: ProjectData;
-  handleVoiceSettingChange: (setting: keyof VoiceSettings, value: VoiceSettings[keyof VoiceSettings]) => void;
-  languageOptions: readonly { value: "Yoruba" | "Hausa" | "Igbo" | "English"; label: string; }[];
-}>(({
-  setCurrentStep,
-  projectData,
-  handleVoiceSettingChange,
-  languageOptions
-}) => {
+  handleVoiceSettingChange: (
+    setting: keyof VoiceSettings,
+    value: VoiceSettings[keyof VoiceSettings]
+  ) => void;
+  languageOptions: readonly {
+    value: "Yoruba" | "Hausa" | "Igbo" | "English";
+    label: string;
+  }[];
+}>(({ setCurrentStep, projectData, handleVoiceSettingChange, languageOptions }) => {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
-
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setShowScrollIndicator(!isNearBottom);
+      setShowScrollIndicator(scrollHeight - scrollTop - clientHeight >= 50);
     };
-
     const checkScrollable = () => {
-      const { scrollHeight, clientHeight } = scrollContainer;
-      setShowScrollIndicator(scrollHeight > clientHeight);
+      setShowScrollIndicator(
+        scrollContainerRef.current
+          ? scrollContainerRef.current.scrollHeight >
+              scrollContainerRef.current.clientHeight
+          : false
+      );
     };
-
     checkScrollable();
-    scrollContainer.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', checkScrollable);
-
+    scrollContainer.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkScrollable);
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkScrollable);
+      scrollContainer.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkScrollable);
     };
   }, [projectData]);
 
@@ -562,8 +615,10 @@ const StepThree = React.memo<{
         </button>
         <h1 className="text-3xl font-bold text-white">Choose Language</h1>
       </div>
-
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-6">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-6"
+      >
         <div>
           <div className="flex items-center mb-4">
             <h3 className="text-white text-lg font-medium">Choose language</h3>
@@ -573,14 +628,16 @@ const StepThree = React.memo<{
             {languageOptions.map((language) => (
               <button
                 key={language.value}
-                onClick={() => handleVoiceSettingChange('language', language.value)}
-                className={`px-6 py-3 rounded-sm border transition-colors ${projectData.voiceSettings.language === language.value
-                  ? "bg-white text-blue-900 border-white"
-                  : "bg-gradient-to-r from-[#8CBE4150] to-background text-white border-gray-600"
-                  }`}
+                onClick={() =>
+                  handleVoiceSettingChange("language", language.value)
+                }
+                className={`px-6 py-3 rounded-sm border transition-colors ${
+                  projectData.voiceSettings.language === language.value
+                    ? "bg-white text-blue-900 border-white"
+                    : "bg-gradient-to-r from-[#8CBE4150] to-background text-white border-gray-600"
+                }`}
               >
                 {language.label}
-
               </button>
             ))}
           </div>
@@ -597,7 +654,9 @@ const StepThree = React.memo<{
     </div>
   );
 });
+StepThree.displayName = "StepThree";
 
+// ─── Step Four ────────────────────────────────────────────────────────────────
 const StepFour = React.memo<{
   setCurrentStep: (step: number) => void;
   projectData: ProjectData;
@@ -606,7 +665,15 @@ const StepFour = React.memo<{
   previewAudio: string | null;
   isGeneratingPreview: boolean;
   previewError: string | null;
-}>(({ setCurrentStep, projectData, activeTab, onGeneratePreview, previewAudio, isGeneratingPreview, previewError }) => {
+}>(({
+  setCurrentStep,
+  projectData,
+  activeTab,
+  onGeneratePreview,
+  previewAudio,
+  isGeneratingPreview,
+  previewError,
+}) => {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -616,73 +683,55 @@ const StepFour = React.memo<{
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
-
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setShowScrollIndicator(!isNearBottom);
+      setShowScrollIndicator(scrollHeight - scrollTop - clientHeight >= 50);
     };
-
     const checkScrollable = () => {
-      const { scrollHeight, clientHeight } = scrollContainer;
-      setShowScrollIndicator(scrollHeight > clientHeight);
+      setShowScrollIndicator(
+        scrollContainerRef.current
+          ? scrollContainerRef.current.scrollHeight >
+              scrollContainerRef.current.clientHeight
+          : false
+      );
     };
-
     checkScrollable();
-    scrollContainer.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', checkScrollable);
-
+    scrollContainer.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkScrollable);
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkScrollable);
+      scrollContainer.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkScrollable);
     };
   }, [previewAudio, isGeneratingPreview]);
 
-  // Initialize WaveSurfer when audio is available
   useEffect(() => {
     if (previewAudio && waveformRef.current) {
-      // Dynamically import WaveSurfer
-      import('wavesurfer.js').then((WaveSurfer) => {
-        // Destroy existing instance
-        if (wavesurferRef.current) {
-          wavesurferRef.current.destroy();
-        }
-
-        // Create new WaveSurfer instance
+      import("wavesurfer.js").then((WaveSurfer) => {
+        if (wavesurferRef.current) wavesurferRef.current.destroy();
         wavesurferRef.current = WaveSurfer.default.create({
           container: waveformRef.current!,
-          waveColor: '#8CBE41',
-          progressColor: '#6b952a',
-          cursorColor: '#ffffff',
+          waveColor: "#8CBE41",
+          progressColor: "#6b952a",
+          cursorColor: "#ffffff",
           barWidth: 2,
           barRadius: 3,
           cursorWidth: 1,
           height: 80,
           barGap: 2,
         });
-
-        // Load audio
         wavesurferRef.current.load(previewAudio);
-
-        // Handle play/pause events
-        wavesurferRef.current.on('play', () => setIsPlaying(true));
-        wavesurferRef.current.on('pause', () => setIsPlaying(false));
-        wavesurferRef.current.on('finish', () => setIsPlaying(false));
+        wavesurferRef.current.on("play", () => setIsPlaying(true));
+        wavesurferRef.current.on("pause", () => setIsPlaying(false));
+        wavesurferRef.current.on("finish", () => setIsPlaying(false));
       });
     }
-
-    // Cleanup on unmount
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
+      if (wavesurferRef.current) wavesurferRef.current.destroy();
     };
   }, [previewAudio]);
 
   const handlePlayPause = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.playPause();
-    }
+    if (wavesurferRef.current) wavesurferRef.current.playPause();
   };
 
   return (
@@ -696,9 +745,10 @@ const StepFour = React.memo<{
         </button>
         <h1 className="text-3xl font-bold text-white">Audio Preview</h1>
       </div>
-
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
-        {/* Script Preview */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6"
+      >
         <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
           <h3 className="text-white text-lg font-medium mb-3">Script Content</h3>
           <div className="bg-white/5 rounded p-3 max-h-32 overflow-y-auto">
@@ -708,30 +758,6 @@ const StepFour = React.memo<{
           </div>
         </div>
 
-        {/* Voice Settings Summary */}
-        {/* <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
-          <h3 className="text-white text-lg font-medium mb-3">Voice Settings</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Gender:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.gender}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Age:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.age}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Language:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.language}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Mood:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.mood}</span>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Audio Preview Section */}
         <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white text-lg font-medium">Audio Preview</h3>
@@ -749,12 +775,9 @@ const StepFour = React.memo<{
             </div>
           )}
 
-          {previewAudio && (
+          {previewAudio ? (
             <div className="bg-white/5 rounded p-4">
-              {/* WaveSurfer Waveform */}
               <div ref={waveformRef} className="mb-4" />
-
-              {/* Play/Pause Button */}
               <div className="flex items-center justify-center gap-4 mt-4">
                 <button
                   onClick={handlePlayPause}
@@ -767,28 +790,24 @@ const StepFour = React.memo<{
                   )}
                 </button>
               </div>
-
               <p className="text-gray-400 text-xs mt-4 text-center">
-                Preview generated successfully. This is how your script will sound.
+                Preview generated. This is how your script will sound.
+              </p>
+            </div>
+          ) : isGeneratingPreview ? (
+            <div className="bg-white/5 rounded p-4 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8CBE41] mx-auto mb-2" />
+              <p className="text-gray-400">Generating audio preview...</p>
+            </div>
+          ) : (
+            <div className="bg-white/5 rounded p-4 text-center">
+              <p className="text-gray-400">
+                Click "Generate Preview" to hear how your script will sound.
               </p>
             </div>
           )}
-
-          {!previewAudio && !isGeneratingPreview && (
-            <div className="bg-white/5 rounded p-4 text-center">
-              <p className="text-gray-400">Click "Generate Preview" to hear how your script will sound.</p>
-            </div>
-          )}
-
-          {isGeneratingPreview && (
-            <div className="bg-white/5 rounded p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8CBE41] mx-auto mb-2"></div>
-              <p className="text-gray-400">Generating audio preview...</p>
-            </div>
-          )}
         </div>
-      </div >
-
+      </div>
       <div className="flex-shrink-0 w-full justify-center flex pt-4">
         <PrimaryBtn
           onClick={() => setCurrentStep(5)}
@@ -798,21 +817,25 @@ const StepFour = React.memo<{
         />
       </div>
       <ScrollIndicator show={showScrollIndicator} />
-    </div >
+    </div>
   );
 });
+StepFour.displayName = "StepFour";
 
+// ─── Step Five ────────────────────────────────────────────────────────────────
 const StepFive = React.memo<{
   isLoading: boolean;
   error: string | null;
   success: boolean;
   handleFinalSubmit: () => void;
   onClose: () => void;
-}>(({ isLoading, error, success, handleFinalSubmit, onClose }) => (
+  onUpgrade: () => void;
+  isLimitReached: boolean;
+}>(({ isLoading, error, success, handleFinalSubmit, onClose, onUpgrade, isLimitReached }) => (
   <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
     <div className="flex-1 flex flex-col overflow-hidden items-center">
-      <div className="flex-1 flex flex-col justify-center items-center">
-        <h5 className="text-3xl text-white font-semibold mb-6">
+      <div className="flex-1 flex flex-col justify-center items-center w-full gap-6">
+        <h5 className="text-3xl text-white font-semibold">
           Processing Your Script
         </h5>
         <div className="w-[150px] h-[150px]">
@@ -830,30 +853,39 @@ const StepFive = React.memo<{
           />
         </div>
 
-        <div className="ring-1 ring-accent-foreground w-[400px] rounded-sm mt-10 bg-[#2D3E4280] pt-2 pb-1">
+        <div className="ring-1 ring-accent-foreground w-[400px] rounded-sm bg-[#2D3E4280] pt-2 pb-1">
           <div className="justify-between items-center flex px-4">
             <span className="font-semibold">
-              {isLoading ? 'Uploading Script...' : 'Upload Complete!'}
+              {isLoading ? "Uploading Script..." : "Upload Complete!"}
             </span>
             <span className="text-gray-400 text-sm">1/2</span>
           </div>
           <ProgressSlider isAdjustable={false} value={isLoading ? 70 : 100} />
         </div>
 
-        {error && (
-          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mt-4 w-[400px]">
+        {/* Limit reached banner on step 5 */}
+        {isLimitReached && (
+          <UpgradeBanner
+            message="You've reached your plan's character limit. Upgrade to continue generating voiceovers."
+            onUpgrade={onUpgrade}
+          />
+        )}
+
+        {error && !isLimitReached && (
+          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded w-[400px]">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded mt-4 w-[400px]">
+          <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded w-[400px]">
             Script uploaded successfully!
           </div>
         )}
       </div>
+
       <div className="flex-shrink-0 w-full flex justify-center pt-6">
-        {!isLoading && !success ? (
+        {!isLoading && !success && !isLimitReached ? (
           <PrimaryBtn
             onClick={handleFinalSubmit}
             label="Upload Script"
@@ -864,6 +896,12 @@ const StepFive = React.memo<{
             onClick={onClose}
             label="Done"
             containerclass="w-[410px] bg-green-500 hover:bg-green-600"
+          />
+        ) : isLimitReached ? (
+          <PrimaryBtn
+            onClick={onUpgrade}
+            label="Upgrade Plan"
+            containerclass="w-[410px]"
           />
         ) : (
           <PrimaryBtn
@@ -876,27 +914,26 @@ const StepFive = React.memo<{
     </div>
   </div>
 ));
+StepFive.displayName = "StepFive";
 
-interface UploadScriptProps {
-  selectedVoiceModelId?: string;
-}
-
-const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => {
+// ─── Main Component ───────────────────────────────────────────────────────────
+const UploadScript: React.FC<UploadScriptProps> = ({
+  selectedVoiceModelId,
+  userId,
+  subscription,
+}) => {
   const [activeTab, setActiveTab] = useState("Manual");
   const [activeIndex, setActiveIndex] = useState(1);
   const { onClose, onOpen } = useStore();
   const { uploadScript, isLoading, error, success } = useUploadScript();
   const projectNameInputRef = useRef<HTMLInputElement>(null);
   const [uploadedScript, setUploadedScript] = useState<Script | null>(null);
+  const router = useRouter();
 
-  // Voice models state
   const [voiceModels, setVoiceModels] = useState<VoiceModelDisplay[]>([]);
   const [loadingVoices, setLoadingVoices] = useState<boolean>(true);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Get userId from your auth context/session
-  const userId = 1; // Replace with actual user ID
 
   const [currentStep, setCurrentStep] = useState(1);
   const [dragActive, setDragActive] = useState(false);
@@ -904,6 +941,19 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string>("");
+  const [isLimitReached, setIsLimitReached] = useState(false);
+
+  // Derive plan limits from subscription prop
+  const planId = subscription?.plan?.id ?? "free";
+  const scriptLimit = PLAN_SCRIPT_LIMITS[planId] ?? PLAN_SCRIPT_LIMITS.free;
+  const monthlyLimit = PLAN_MONTHLY_LIMITS[planId] ?? PLAN_MONTHLY_LIMITS.free;
+  const isUnlimited = monthlyLimit === null;
+  const charactersUsed = subscription?.usage?.charactersUsed ?? 0;
+  const remainingMonthly =
+    isUnlimited || monthlyLimit === null
+      ? null
+      : Math.max(0, monthlyLimit - charactersUsed);
+
   const initialProjectData: ProjectData = {
     name: "",
     language: "Yoruba",
@@ -920,152 +970,43 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
 
   const [projectData, setProjectData] = useState<ProjectData>(initialProjectData);
 
+  const handleUpgrade = useCallback(() => {
+    onClose();
+    router.push("/dashboard/subscriptions");
+  }, [onClose, router]);
+
   useEffect(() => {
     const fetchVoiceModels = async () => {
       try {
-
         const yarnGptModels: VoiceModel[] = [
-          {
-            id: "idera",
-            name: "Idera",
-            category: "YarnGPT",
-            gender: "Female",
-            accent: "Nigerian",
-            image: "/images/models/Idera - Melodic and Gentle.jpeg"
-          },
-          {
-            id: "emma",
-            name: "Emma",
-            category: "YarnGPT",
-            gender: "Female",
-            accent: "Authoritative, deep",
-            image: "/images/models/Emma - Authoritative & deep.jpeg"
-          },
-          {
-            id: "zainab",
-            name: "Zainab",
-            category: "YarnGPT",
-            gender: "Female",
-            accent: "Soothing, gentle",
-            image: "/images/models/Zainab - soothing & gentle.jpeg"
-          },
-          {
-            id: "osagie",
-            name: "Osagie",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Smooth, calm",
-            image: "/images/models/Osagie - smooth & calm.jpeg"
-          },
-          {
-            id: "wura",
-            name: "Wura",
-            category: "YarnGPT",
-            gender: "Female",
-            age: "Young",
-            accent: "Sweet",
-            image: "/images/models/Wura - young & sweet.jpeg"
-          },
-          {
-            id: "jude",
-            name: "Jude",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Warm, confident",
-            image: "/images/models/Jude - warm & confident.jpeg"
-          },
-          {
-            id: "chinenye",
-            name: "Chinenye",
-            category: "YarnGPT",
-            gender: "Female",
-            accent: "Engaging, warm",
-            image: "/images/models/Chinenye - Engaging & warm.jpeg"
-          },
-          {
-            id: "tayo",
-            name: "Tayo",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Upbeat, energetic",
-            image: "/images/models/Tayo - Upbeat, energetic.jpeg"
-          },
-          {
-            id: "regina",
-            name: "Regina",
-            category: "YarnGPT",
-            gender: "Female",
-            age: "Mature",
-            accent: "Warm",
-            image: "/images/models/Regina - Mature, warm.jpeg"
-          },
-          {
-            id: "femi",
-            name: "Femi",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Rich, reassuring",
-            image: "/images/models/Femi - rich, assuring.jpeg"
-          },
-          {
-            id: "adaora",
-            name: "Adaora",
-            category: "YarnGPT",
-            gender: "Female",
-            accent: "Warm, engaging",
-            image: "/images/models/Adaora - warm, engaging.jpeg"
-          },
-          {
-            id: "umar",
-            name: "Umar",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Calm, smooth",
-            image: "/images/models/Umar - Calm, smooth.jpeg"
-          },
-          {
-            id: "mary",
-            name: "Mary",
-            category: "YarnGPT",
-            gender: "Female",
-            age: "Young",
-            accent: "Energetic",
-            image: "/images/models/Mary.jpeg"
-          },
-          {
-            id: "nonso",
-            name: "Nonso",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Bold, resonant",
-            image: "/images/models/Nonso.jpeg"
-          },
-          {
-            id: "remi",
-            name: "Remi",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Melodious, warm",
-            image: "/images/models/Remi - melodious, warm.jpeg"
-          },
-          {
-            id: "adam",
-            name: "Adam",
-            category: "YarnGPT",
-            gender: "Male",
-            accent: "Deep, clear",
-            image: "/images/models/Adam-deep, clear.jpeg"
-          }
+          { id: "idera", name: "Idera", category: "YarnGPT", gender: "Female", accent: "Nigerian", image: "/images/models/Idera - Melodic and Gentle.jpeg" },
+          { id: "emma", name: "Emma", category: "YarnGPT", gender: "Female", accent: "Authoritative, deep", image: "/images/models/Emma - Authoritative & deep.jpeg" },
+          { id: "zainab", name: "Zainab", category: "YarnGPT", gender: "Female", accent: "Soothing, gentle", image: "/images/models/Zainab - soothing & gentle.jpeg" },
+          { id: "osagie", name: "Osagie", category: "YarnGPT", gender: "Male", accent: "Smooth, calm", image: "/images/models/Osagie - smooth & calm.jpeg" },
+          { id: "wura", name: "Wura", category: "YarnGPT", gender: "Female", age: "Young", accent: "Sweet", image: "/images/models/Wura - young & sweet.jpeg" },
+          { id: "jude", name: "Jude", category: "YarnGPT", gender: "Male", accent: "Warm, confident", image: "/images/models/Jude - warm & confident.jpeg" },
+          { id: "chinenye", name: "Chinenye", category: "YarnGPT", gender: "Female", accent: "Engaging, warm", image: "/images/models/Chinenye - Engaging & warm.jpeg" },
+          { id: "tayo", name: "Tayo", category: "YarnGPT", gender: "Male", accent: "Upbeat, energetic", image: "/images/models/Tayo - Upbeat, energetic.jpeg" },
+          { id: "regina", name: "Regina", category: "YarnGPT", gender: "Female", age: "Mature", accent: "Warm", image: "/images/models/Regina - Mature, warm.jpeg" },
+          { id: "femi", name: "Femi", category: "YarnGPT", gender: "Male", accent: "Rich, reassuring", image: "/images/models/Femi - rich, assuring.jpeg" },
+          { id: "adaora", name: "Adaora", category: "YarnGPT", gender: "Female", accent: "Warm, engaging", image: "/images/models/Adaora - warm, engaging.jpeg" },
+          { id: "umar", name: "Umar", category: "YarnGPT", gender: "Male", accent: "Calm, smooth", image: "/images/models/Umar - Calm, smooth.jpeg" },
+          { id: "mary", name: "Mary", category: "YarnGPT", gender: "Female", age: "Young", accent: "Energetic", image: "/images/models/Mary.jpeg" },
+          { id: "nonso", name: "Nonso", category: "YarnGPT", gender: "Male", accent: "Bold, resonant", image: "/images/models/Nonso.jpeg" },
+          { id: "remi", name: "Remi", category: "YarnGPT", gender: "Male", accent: "Melodious, warm", image: "/images/models/Remi - melodious, warm.jpeg" },
+          { id: "adam", name: "Adam", category: "YarnGPT", gender: "Male", accent: "Deep, clear", image: "/images/models/Adam-deep, clear.jpeg" },
         ];
 
-        const voiceModelDisplays: VoiceModelDisplay[] = yarnGptModels.map(model => ({
-          id: model.id,
-          name: model.name,
-          description: `${model.gender || ''} • ${model.accent || ''}`.trim().replace(/^• |• $/, ''),
-          image: model.image
-        }));
-
-        setVoiceModels(voiceModelDisplays);
+        setVoiceModels(
+          yarnGptModels.map((model) => ({
+            id: model.id,
+            name: model.name,
+            description: `${model.gender || ""} • ${model.accent || ""}`
+              .trim()
+              .replace(/^• |• $/, ""),
+            image: model.image,
+          }))
+        );
       } catch (err) {
         console.error("Error loading YarnGPT voice models:", err);
         toast.error("Failed to load voice models");
@@ -1077,31 +1018,26 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
     fetchVoiceModels();
   }, []);
 
-  // Set active index to pre-selected voice model when models are loaded
   useEffect(() => {
     if (selectedVoiceModelId && voiceModels.length > 0) {
-      const selectedIndex = voiceModels.findIndex(model => model.id === selectedVoiceModelId);
-      if (selectedIndex !== -1) {
-        setActiveIndex(selectedIndex);
-      }
+      const selectedIndex = voiceModels.findIndex(
+        (model) => model.id === selectedVoiceModelId
+      );
+      if (selectedIndex !== -1) setActiveIndex(selectedIndex);
     }
   }, [selectedVoiceModelId, voiceModels]);
 
   const getVisibleItems = useCallback(() => {
     if (voiceModels.length === 0) return [];
-    const items = [];
-    for (let i = -1; i <= 1; i++) {
+    return [-1, 0, 1].map((i) => {
       const index = (activeIndex + i + voiceModels.length) % voiceModels.length;
-      items.push({ ...voiceModels[index], position: i });
-    }
-    return items;
+      return { ...voiceModels[index], position: i };
+    });
   }, [activeIndex, voiceModels]);
 
   const goToPrevious = useCallback(() => {
     if (voiceModels.length === 0) return;
-    setActiveIndex(
-      (prev) => (prev - 1 + voiceModels.length) % voiceModels.length
-    );
+    setActiveIndex((prev) => (prev - 1 + voiceModels.length) % voiceModels.length);
   }, [voiceModels.length]);
 
   const goToNext = useCallback(() => {
@@ -1109,137 +1045,87 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
     setActiveIndex((prev) => (prev + 1) % voiceModels.length);
   }, [voiceModels.length]);
 
-  const getItemStyles = useCallback((position: number) => {
-    if (position === 0) {
-      return {
-        transform: "translateX(0) scale(0.9)",
-        zIndex: 10,
-        opacity: 1,
-      };
-    } else if (position === -1) {
-      return {
-        transform: "translateX(-150px) scale(0.9)",
-        zIndex: 5,
-        opacity: 0.8,
-      };
-    } else {
-      return {
-        transform: "translateX(150px) scale(0.8)",
-        zIndex: 5,
-        opacity: 0.6,
-      };
-    }
+  const getItemStyles = useCallback((position: number): React.CSSProperties => {
+    if (position === 0) return { transform: "translateX(0) scale(0.9)", zIndex: 10, opacity: 1 };
+    if (position === -1) return { transform: "translateX(-150px) scale(0.9)", zIndex: 5, opacity: 0.8 };
+    return { transform: "translateX(150px) scale(0.8)", zIndex: 5, opacity: 0.6 };
   }, []);
 
-  const genderOptions = useMemo(() => [
-    { value: "MALE", label: "Male" },
-    { value: "FEMALE", label: "Female" },
-    { value: "KID", label: "Kid" }
-  ] as const, []);
-
-  const ageOptions = useMemo(() => [
-    { value: "CHILD", label: "Child" },
-    { value: "TEENAGER", label: "Teenager" },
-    { value: "YOUNG_ADULT", label: "Young Adult (20-35)" },
-    { value: "ELDERLY_45_65", label: "Elderly (45-65)" },
-    { value: "OLD_70_PLUS", label: "Old (70+)" }
-  ] as const, []);
-
-  const languageOptions = useMemo(() => [
-    { value: "Yoruba", label: "Yoruba" },
-    { value: "Hausa", label: "Hausa" },
-    { value: "Igbo", label: "Igbo" },
-    { value: "English", label: "English" }
-  ] as const, []);
-
-  const moodOptions = useMemo(() => [
-    { value: "ANGRY", label: "Angry" },
-    { value: "HAPPY", label: "Happy" },
-    { value: "ANXIOUS", label: "Anxious" },
-    { value: "DRAMA", label: "Drama" },
-    { value: "SURPRISED", label: "Surprised" },
-    { value: "SCARED", label: "Scared" },
-    { value: "LAX", label: "Lax" },
-    { value: "SAD", label: "Sad" },
-    { value: "EXCITED", label: "Excited" },
-    { value: "DISAPPOINTED", label: "Disappointed" },
-    { value: "STRICT", label: "Strict" }
-  ] as const, []);
+  const languageOptions = useMemo(
+    () =>
+      [
+        { value: "Yoruba", label: "Yoruba" },
+        { value: "Hausa", label: "Hausa" },
+        { value: "Igbo", label: "Igbo" },
+        { value: "English", label: "English" },
+      ] as const,
+    []
+  );
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   }, []);
 
   const extractFileContent = useCallback(async (file: File) => {
     try {
-      if (file.name.endsWith('.txt') || file.type === 'text/plain') {
-        // Read text file
+      if (file.name.endsWith(".txt") || file.type === "text/plain") {
         let text = await file.text();
-
-        // Enforce 2000 character limit
-        if (text.length > 2000) {
-          text = text.substring(0, 2000);
-          toast.warning(`File content truncated to 2000 characters (YarnGPT limit)`);
+        if (text.length > scriptLimit) {
+          text = text.substring(0, scriptLimit);
+          toast.warning(`File content truncated to ${scriptLimit.toLocaleString()} characters (your plan limit)`);
         } else {
-          toast.success('File content extracted successfully');
+          toast.success("File content extracted successfully");
         }
-
         setProjectData((prev) => ({ ...prev, script: file, content: text }));
-      } else if (file.name.endsWith('.docx')) {
-        // For .docx files, we need mammoth or similar library
-        // For now, just store the file and show a message
+      } else if (file.name.endsWith(".docx")) {
         setProjectData((prev) => ({ ...prev, script: file }));
-        toast.info('DOCX file uploaded. Content will be extracted on server and truncated to 2000 characters if needed.');
+        toast.info("DOCX file uploaded. Content will be extracted and truncated to your plan limit if needed.");
       } else {
-        setFileError('Unsupported file type. Please upload .txt or .docx files.');
+        setFileError("Unsupported file type. Please upload .txt or .docx files.");
       }
     } catch (err) {
-      console.error('Error reading file:', err);
-      setFileError('Failed to read file content');
+      console.error("Error reading file:", err);
+      setFileError("Failed to read file content");
     }
-  }, []);
+  }, [scriptLimit]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (
-        file.type === "text/plain" ||
-        file.name.endsWith(".docx") ||
-        file.name.endsWith(".txt")
-      ) {
-        extractFileContent(file);
-      } else {
-        setFileError('Please upload a .txt or .docx file');
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+      if (e.dataTransfer.files?.[0]) {
+        const file = e.dataTransfer.files[0];
+        if (file.type === "text/plain" || file.name.endsWith(".docx") || file.name.endsWith(".txt")) {
+          extractFileContent(file);
+        } else {
+          setFileError("Please upload a .txt or .docx file");
+        }
       }
-    }
-  }, [extractFileContent]);
+    },
+    [extractFileContent]
+  );
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      extractFileContent(file);
-    }
-  }, [extractFileContent]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files?.[0]) extractFileContent(e.target.files[0]);
+    },
+    [extractFileContent]
+  );
 
-  const handleProjectNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setProjectData(prev => ({ ...prev, name: e.target.value }));
-  }, []);
+  const handleProjectNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setProjectData((prev) => ({ ...prev, name: e.target.value }));
+    },
+    []
+  );
 
   const handleLanguageChange = useCallback((value: string) => {
     setProjectData((prev) => ({
       ...prev,
       language: value,
-      // Also update voice settings language to keep them in sync
       voiceSettings: {
         ...prev.voiceSettings,
         language: value as VoiceSettings["language"],
@@ -1247,25 +1133,26 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
     }));
   }, []);
 
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setProjectData(prev => ({ ...prev, content: e.target.value }));
-  }, []);
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setProjectData((prev) => ({ ...prev, content: e.target.value }));
+    },
+    []
+  );
 
-  const handleVoiceSettingChange = useCallback((
-    setting: keyof VoiceSettings,
-    value: VoiceSettings[keyof VoiceSettings]
-  ) => {
-    setProjectData((prev) => ({
-      ...prev,
-      voiceSettings: { ...prev.voiceSettings, [setting]: value },
-    }));
-    // Clear preview when settings change
-    setPreviewAudio(null);
-    setPreviewError(null);
-  }, []);
+  const handleVoiceSettingChange = useCallback(
+    (setting: keyof VoiceSettings, value: VoiceSettings[keyof VoiceSettings]) => {
+      setProjectData((prev) => ({
+        ...prev,
+        voiceSettings: { ...prev.voiceSettings, [setting]: value },
+      }));
+      setPreviewAudio(null);
+      setPreviewError(null);
+    },
+    []
+  );
 
   const handleVoiceModelProceed = useCallback(() => {
-    // Save the selected voice model ID before proceeding
     if (voiceModels.length > 0 && voiceModels[activeIndex]) {
       setProjectData((prev) => ({
         ...prev,
@@ -1275,148 +1162,86 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
     setCurrentStep(2);
   }, [voiceModels, activeIndex]);
 
-  const handlePlayVoice = useCallback(async (voiceId: string) => {
-    // If clicking on the currently playing voice, pause it
-    if (playingVoiceId === voiceId) {
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause();
+  const handlePlayVoice = useCallback(
+    async (voiceId: string) => {
+      if (playingVoiceId === voiceId) {
+        currentAudioRef.current?.pause();
         currentAudioRef.current = null;
+        setPlayingVoiceId(null);
+        return;
       }
-      setPlayingVoiceId(null);
-      return;
-    }
-
-    try {
-      // Stop any currently playing audio
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause();
+      try {
+        currentAudioRef.current?.pause();
         currentAudioRef.current = null;
-      }
+        setPlayingVoiceId(voiceId);
 
-      setPlayingVoiceId(voiceId);
-
-      // First try to get saved preview from database
-      const previewResponse = await fetch(`/api/voice-preview/${voiceId}`);
-
-      if (previewResponse.ok) {
-        const previewData = await previewResponse.json();
-        if (previewData.success && previewData.preview?.audioUrl) {
-          // Use saved preview
-          const audio = new Audio(previewData.preview.audioUrl);
-          currentAudioRef.current = audio;
-
-          audio.onended = () => {
-            setPlayingVoiceId(null);
-            currentAudioRef.current = null;
-          };
-
-          audio.onerror = () => {
-            setPlayingVoiceId(null);
-            currentAudioRef.current = null;
-            toast.error("Failed to play voice preview");
-          };
-
-          await audio.play();
-          return;
+        const previewResponse = await fetch(`/api/voice-preview/${voiceId}`);
+        if (previewResponse.ok) {
+          const previewData = await previewResponse.json();
+          if (previewData.success && previewData.preview?.audioUrl) {
+            const audio = new Audio(previewData.preview.audioUrl);
+            currentAudioRef.current = audio;
+            audio.onended = () => { setPlayingVoiceId(null); currentAudioRef.current = null; };
+            audio.onerror = () => { setPlayingVoiceId(null); currentAudioRef.current = null; toast.error("Failed to play voice preview"); };
+            await audio.play();
+            return;
+          }
         }
-      }
 
-      // Fallback: Generate new preview using TTS API
-      toast.info("Generating voice preview...", { duration: 2000 });
+        toast.info("Generating voice preview...", { duration: 2000 });
+        const response = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "Culture shapes identity, values, and traditions, connecting generations through language, art, and beliefs while fostering understanding, respect, and unity in an increasingly diverse and interconnected world.",
+            voice: voiceId,
+            response_format: "mp3",
+          }),
+        });
+        if (!response.ok) throw new Error("Failed to generate voice preview");
 
-      const previewText = "Culture shapes identity, values, and traditions, connecting generations through language, art, and beliefs while fostering understanding, respect, and unity in an increasingly diverse and interconnected world.";
-
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: previewText,
-          voice: voiceId,
-          response_format: "mp3"
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to generate voice preview");
-
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-
-      // Store reference to the current audio
-      currentAudioRef.current = audio;
-
-      audio.onended = () => {
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        currentAudioRef.current = audio;
+        audio.onended = () => { setPlayingVoiceId(null); currentAudioRef.current = null; URL.revokeObjectURL(audioUrl); };
+        audio.onerror = () => { setPlayingVoiceId(null); currentAudioRef.current = null; URL.revokeObjectURL(audioUrl); toast.error("Failed to play voice preview"); };
+        await audio.play();
+      } catch (err) {
+        console.error("Error playing voice:", err);
         setPlayingVoiceId(null);
         currentAudioRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      audio.onerror = () => {
-        setPlayingVoiceId(null);
-        currentAudioRef.current = null;
-        URL.revokeObjectURL(audioUrl);
         toast.error("Failed to play voice preview");
-      };
-
-      await audio.play();
-    } catch (err) {
-      console.error("Error playing voice:", err);
-      setPlayingVoiceId(null);
-      currentAudioRef.current = null;
-      toast.error("Failed to play voice preview");
-    }
-  }, [playingVoiceId]);
+      }
+    },
+    [playingVoiceId]
+  );
 
   const handleGeneratePreview = useCallback(async () => {
     setIsGeneratingPreview(true);
     setPreviewError(null);
-
     try {
       const textContent = projectData.content;
-
-      if (!textContent || !textContent.trim()) {
-        throw new Error("No content available for preview. Please add text or upload a file.");
-      }
-
-      // Generate a short preview (first 200 characters)
+      if (!textContent?.trim()) throw new Error("No content available for preview.");
       const previewText = textContent.substring(0, 200) + (textContent.length > 200 ? "..." : "");
-
-      // Translate text to selected language
-      const selectedLanguage = projectData.voiceSettings.language as 'Yoruba' | 'Hausa' | 'Igbo' | 'English';
+      const selectedLanguage = projectData.voiceSettings.language as "Yoruba" | "Hausa" | "Igbo" | "English";
       toast.info(`Translating to ${selectedLanguage}...`, { duration: 2000 });
       const translatedText = await translateText(previewText, selectedLanguage);
-
-      // Get the selected voice ID
       const voiceId = projectData.voiceModelId || "idera";
-
-      // Call YarnGPT TTS API directly (no Cloudinary upload for preview)
       const response = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: translatedText,
-          voice: voiceId,
-          response_format: "mp3"
-        }),
+        body: JSON.stringify({ text: translatedText, voice: voiceId, response_format: "mp3" }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate audio preview");
-      }
-
-      // Create audio URL from blob
+      if (!response.ok) throw new Error("Failed to generate audio preview");
       const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-
-      setPreviewAudio(audioUrl);
+      setPreviewAudio(URL.createObjectURL(blob));
     } catch (error) {
-      console.error('Preview generation error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate preview";
-      setPreviewError(errorMessage);
+      setPreviewError(error instanceof Error ? error.message : "Failed to generate preview");
     } finally {
       setIsGeneratingPreview(false);
     }
-  }, [activeTab, projectData.content, projectData.voiceModelId, projectData.voiceSettings.language]);
+  }, [projectData.content, projectData.voiceModelId, projectData.voiceSettings.language]);
 
   const resetForm = useCallback(() => {
     setProjectData(initialProjectData);
@@ -1427,43 +1252,39 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
     setActiveTab("Manual");
     setUploadedScript(null);
     setFileError("");
-  }, [initialProjectData]);
+    setIsLimitReached(false);
+  }, []);
 
   const handleFinalSubmit = useCallback(async () => {
     try {
-      // Validate that we have content
-      if (!projectData.content || !projectData.content.trim()) {
+      if (!projectData.content?.trim()) {
         toast.error("Please add content to your script");
         return;
       }
-
-      // Validate that we have a voice model selected
       if (!projectData.voiceModelId) {
         toast.error("Please select a voice model");
         return;
       }
 
-      // Enforce 2000 character limit for YarnGPT API
       let contentToSubmit = projectData.content;
-      if (contentToSubmit.length > 2000) {
-        contentToSubmit = contentToSubmit.substring(0, 2000);
-        toast.warning("Content truncated to 2000 characters for YarnGPT API");
+      if (contentToSubmit.length > scriptLimit) {
+        contentToSubmit = contentToSubmit.substring(0, scriptLimit);
+        toast.warning(`Content truncated to ${scriptLimit.toLocaleString()} characters`);
       }
 
-      // Translate text to selected language
-      const selectedLanguage = projectData.voiceSettings.language as 'Yoruba' | 'Hausa' | 'Igbo' | 'English';
+      const selectedLanguage = projectData.voiceSettings.language as "Yoruba" | "Hausa" | "Igbo" | "English";
       toast.info(`Translating to ${selectedLanguage}...`, { duration: 2000 });
       const translatedContent = await translateText(contentToSubmit, selectedLanguage);
 
       const scriptData = {
         projectName: projectData.name,
         language: projectData.language,
-        content: translatedContent, // Use translated content
-        mode: activeTab.toLowerCase() as 'manual' | 'upload',
+        content: translatedContent,
+        mode: activeTab.toLowerCase() as "manual" | "upload",
         userId,
-        voiceModelId: projectData.voiceModelId, // Include selected voice model
+        voiceModelId: projectData.voiceModelId,
         voiceSettings: projectData.voiceSettings,
-        generateAudio: true, // Always generate audio when submitting
+        generateAudio: true,
         ...(activeTab === "Upload" && projectData.script && {
           fileName: projectData.script.name,
           fileSize: projectData.script.size,
@@ -1473,8 +1294,13 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
 
       const result = await uploadScript(scriptData);
 
-      // If upload was successful, convert the response to Script type and open EditProject
-      if (result.success && result.data) {
+      // Handle limit reached response from server
+      if (result?.limitReached) {
+        setIsLimitReached(true);
+        return;
+      }
+
+      if (result?.success && result.data) {
         const script: Script = {
           id: result.data.id,
           projectName: result.data.projectName,
@@ -1492,22 +1318,16 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
           createdAt: result.data.createdAt,
           updatedAt: result.data.createdAt,
         };
-
         setUploadedScript(script);
-
-        // Reset form data
         resetForm();
-
-        // Open EditProject with the script, voice settings, and voice model ID
         setTimeout(() => {
           onOpen("modal", <EditProject script={script} voiceSettings={projectData.voiceSettings} voiceModelId={projectData.voiceModelId || undefined} />);
         }, 500);
       }
-
     } catch (err) {
-      console.error('Upload failed:', err);
+      console.error("Upload failed:", err);
     }
-  }, [projectData, activeTab, userId, uploadScript, onOpen, resetForm]);
+  }, [projectData, activeTab, userId, scriptLimit, uploadScript, onOpen, resetForm]);
 
   return (
     <div className="h-full py-10 px-6 w-full flex flex-col overflow-hidden">
@@ -1553,6 +1373,10 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
           error={fileError}
           setCurrentStep={setCurrentStep}
           projectNameInputRef={projectNameInputRef}
+          scriptLimit={scriptLimit}
+          remainingMonthly={remainingMonthly}
+          isUnlimited={isUnlimited}
+          onUpgrade={handleUpgrade}
         />
       )}
 
@@ -1584,6 +1408,8 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
           success={success}
           handleFinalSubmit={handleFinalSubmit}
           onClose={onClose}
+          onUpgrade={handleUpgrade}
+          isLimitReached={isLimitReached}
         />
       )}
     </div>

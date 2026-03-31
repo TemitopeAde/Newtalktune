@@ -1,6 +1,5 @@
 import Contact from "@/components/Contact";
 import Content from "@/components/Content";
-import Footer from "@/components/Footer";
 import PricingHero from "@/components/hero/PricingHero";
 import Testimonials from "@/components/Testimonials";
 import React from "react";
@@ -12,7 +11,6 @@ const page = () => {
       <Content />
       <Testimonials />
       <Contact />
-      <Footer />
     </div>
   );
 };

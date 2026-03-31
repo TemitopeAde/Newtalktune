@@ -162,6 +162,7 @@ export type UploadScriptResponse = {
   success: boolean;
   message: string;
   scriptId: string;
+  limitReached?: boolean;
   data: {
     id: string;
     projectName: string;

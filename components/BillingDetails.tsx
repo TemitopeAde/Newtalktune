@@ -1,131 +1,183 @@
-"use client"
+"use client";
 
-import React from "react";
-import { ArrowLeft, Edit3, Trash2, Plus, ChevronLeft } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { ChevronLeft, Loader2, Receipt, CheckCircle2, XCircle } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-interface PaymentMethod {
+interface Payment {
   id: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-  nextBillingDate: string;
-  cardType: "mastercard" | "visa" | "amex";
+  txRef: string;
+  planId: string;
+  billingCycle: string;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
 }
 
-interface BillingDetailsProps {
-  onBack?: () => void;
-  onEditCard?: (cardId: string) => void;
-  onDeleteCard?: (cardId: string) => void;
-  onAddNewCard?: () => void;
+interface SubscriptionData {
+  plan: {
+    id: string;
+    name: string;
+    amountPaid: number;
+  };
+  billingCycle: "monthly" | "yearly";
+  endDate: string | null;
+  isCancelled: boolean;
+  payments: Payment[];
 }
 
-const BillingDetails: React.FC<BillingDetailsProps> = ({
-  onBack,
-  onEditCard,
-  onDeleteCard,
-  onAddNewCard,
-}) => {
+const BillingDetails: React.FC = () => {
+  const { onClose } = useStore();
+  const [data, setData] = useState<SubscriptionData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    const {onClose} =useStore()
+  useEffect(() => {
+    const fetchBilling = async () => {
+      try {
+        const res = await fetch("/api/user/subscription");
+        if (!res.ok) throw new Error("Failed to fetch billing details");
+        const json = await res.json();
+        setData(json);
+      } catch {
+        toast.error("Failed to load billing details.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const paymentMethods: PaymentMethod[] = [
-    {
-      id: "1",
-      cardNumber: "5782 **** **** 7684",
-      expiryDate: "12/99",
-      cvv: "909",
-      nextBillingDate: "22nd Aug 2024",
-      cardType: "mastercard",
-    },
-    {
-      id: "2",
-      cardNumber: "5782 **** **** 7684",
-      expiryDate: "12/99",
-      cvv: "909",
-      nextBillingDate: "22nd Aug 2024",
-      cardType: "mastercard",
-    },
-  ];
+    fetchBilling();
+  }, []);
 
-  const MastercardLogo = () => (
-    <div className="flex items-center">
-      <div className="w-8 h-8 relative">
-        {/* Mastercard circles */}
-        <div className="absolute left-0 w-6 h-6 bg-red-500 rounded-full"></div>
-        <div className="absolute right-0 w-6 h-6 bg-orange-400 rounded-full"></div>
-      </div>
-      <span className="text-white text-xs font-semibold ml-2">mastercard</span>
-    </div>
-  );
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount: number, currency: string) =>
+    `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+  const planLabel = (planId: string) =>
+    planId.charAt(0).toUpperCase() + planId.slice(1) + " Plan";
 
   return (
     <div className="w-full h-full p-4">
       <button
         onClick={onClose}
-        className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+        className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
       >
         <ChevronLeft className="w-6 h-6 text-white" />
       </button>
 
       <h2 className="text-2xl font-medium my-4">Billing Details</h2>
 
-      {/* Payment Methods */}
-      <div className="space-y-6 mb-8">
-        {paymentMethods.map((method) => (
-          <div
-            key={method.id}
-            className="bg-slate-800/80 backdrop-blur-sm rounded-2xl border-l-2 border-accent-foreground p-8"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <MastercardLogo />
-                <div className="text-white">
-                  <div className="text-xl font-bold tracking-wider mb-2">
-                    {method.cardNumber}
-                  </div>
-                  <div className="flex gap-8 text-lg font-bold">
-                    <span>{method.expiryDate}</span>
-                    <span>{method.cvv}</span>
-                  </div>
-                </div>
-              </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-[55vh]">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+        </div>
+      ) : !data ? (
+        <div className="flex items-center justify-center h-[55vh]">
+          <p className="text-slate-400">Failed to load billing details.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => onEditCard?.(method.id)}
-                  className="w-10 h-10 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                >
-                  <Edit3 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onDeleteCard?.(method.id)}
-                  className="w-10 h-10 bg-slate-700/50 hover:bg-red-600/50 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-400 transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+          {/* Current plan summary */}
+          <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl border-l-2 border-[#8CBE41] p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">Current plan</p>
+                <h3 className="text-white text-xl font-bold">{data.plan.name}</h3>
+                <p className="text-slate-400 text-sm capitalize mt-1">
+                  {data.billingCycle} billing
+                  {data.isCancelled && (
+                    <span className="ml-2 text-amber-400">(Cancelled)</span>
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-slate-400 text-sm mb-1">Amount</p>
+                <p className="text-white text-2xl font-bold">
+                  ${data.plan.amountPaid}
+                  <span className="text-slate-400 text-sm font-normal ml-1">
+                    /{data.billingCycle === "yearly" ? "yr" : "mo"}
+                  </span>
+                </p>
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-slate-600 mb-6"></div>
+            <div className="h-px bg-slate-600 mb-4" />
 
-            {/* Next Billing Date */}
-            <p className="text-slate-400 text-base">
-              Next billing date is {method.nextBillingDate}
-            </p>
+            <div className="flex justify-between items-center">
+              <p className="text-slate-400 text-sm">
+                {data.isCancelled ? "Access until" : "Next billing date"}
+              </p>
+              <p className="text-white font-semibold text-sm">
+                {data.plan.id === "free" ? "No billing" : formatDate(data.endDate)}
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Add New Card Button */}
-      <button
-        onClick={onAddNewCard}
-        className="w-full bg-slate-700/80 hover:bg-slate-600/80 backdrop-blur-sm rounded-sm border border-slate-600/50 hover:border-slate-500/50 p-3 flex items-center justify-center gap-3 text-white text-base font-semibold transition-all"
-      >
-        <Plus className="w-6 h-6" />
-        Add New Card
-      </button>
+          {/* Payment history */}
+          <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Receipt className="w-5 h-5 text-[#8CBE41]" />
+              <h3 className="text-white font-semibold text-lg">Payment History</h3>
+            </div>
+
+            {data.payments.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-slate-400 text-sm">No payment history yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                {data.payments.map((payment) => (
+                  <div
+                    key={payment.id}
+                    className="flex items-center justify-between bg-slate-700/50 rounded-lg px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      {payment.status === "successful" ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                      )}
+                      <div>
+                        <p className="text-white text-sm font-medium">
+                          {planLabel(payment.planId)}
+                        </p>
+                        <p className="text-slate-400 text-xs capitalize">
+                          {payment.billingCycle} · {formatDate(payment.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn(
+                        "text-sm font-semibold",
+                        payment.status === "successful" ? "text-white" : "text-red-400"
+                      )}>
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </p>
+                      <p className={cn(
+                        "text-xs capitalize",
+                        payment.status === "successful" ? "text-green-400" : "text-red-400"
+                      )}>
+                        {payment.status}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

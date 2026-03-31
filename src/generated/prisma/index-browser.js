@@ -132,8 +132,15 @@ exports.Prisma.UserScalarFieldEnum = {
   phoneNumber: 'phoneNumber',
   otp: 'otp',
   otpExpiresAt: 'otpExpiresAt',
+  image: 'image',
   role: 'role',
-  subscriptionPlan: 'subscriptionPlan'
+  subscriptionPlan: 'subscriptionPlan',
+  subscriptionCycle: 'subscriptionCycle',
+  subscriptionStartDate: 'subscriptionStartDate',
+  subscriptionEndDate: 'subscriptionEndDate',
+  subscriptionTxRef: 'subscriptionTxRef',
+  charactersUsed: 'charactersUsed',
+  cancelledAt: 'cancelledAt'
 };
 
 exports.Prisma.AccountScalarFieldEnum = {
@@ -246,6 +253,19 @@ exports.Prisma.VoicePreviewScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  txRef: 'txRef',
+  transactionId: 'transactionId',
+  planId: 'planId',
+  billingCycle: 'billingCycle',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -315,7 +335,8 @@ exports.Prisma.ModelName = {
   EarlyAccess: 'EarlyAccess',
   Blog: 'Blog',
   Notification: 'Notification',
-  VoicePreview: 'VoicePreview'
+  VoicePreview: 'VoicePreview',
+  Payment: 'Payment'
 };
 
 /**

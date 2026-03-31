@@ -9,23 +9,31 @@ datasource db {
 }
 
 model User {
-  id               Int            @id @default(autoincrement())
-  clerkId          String?        @unique
-  createdAt        DateTime       @default(now())
-  email            String         @unique
-  name             String?
-  password         String?
-  countryCode      Int?
-  isVerified       Boolean        @default(false)
-  phoneNumber      String?        @unique
-  otp              Int?
-  otpExpiresAt     DateTime?
-  role             Role           @default(USER)
-  subscriptionPlan String?        @default("free")
-  Account          Account[]
-  scripts          Script[]
-  Session          Session[]
-  voiceProfiles    VoiceProfile[]
+  id                    Int            @id @default(autoincrement())
+  clerkId               String?        @unique
+  createdAt             DateTime       @default(now())
+  email                 String         @unique
+  name                  String?
+  password              String?
+  countryCode           Int?
+  isVerified            Boolean        @default(false)
+  phoneNumber           String?        @unique
+  otp                   Int?
+  otpExpiresAt          DateTime?
+  image                 String?
+  role                  Role           @default(USER)
+  subscriptionPlan      String?        @default("free")
+  subscriptionCycle     String?
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  subscriptionTxRef     String?
+  charactersUsed        Int            @default(0)
+  cancelledAt           DateTime?
+  Account               Account[]
+  scripts               Script[]
+  Session               Session[]
+  voiceProfiles         VoiceProfile[]
+  Payment               Payment[]
 }
 
 model Account {
@@ -195,4 +203,20 @@ model VoicePreview {
   updatedAt     DateTime @updatedAt
 
   @@map("voice_previews")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        Int
+  txRef         String   @unique
+  transactionId String?
+  planId        String
+  billingCycle  String
+  amount        Float
+  currency      String   @default("USD")
+  status        String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }

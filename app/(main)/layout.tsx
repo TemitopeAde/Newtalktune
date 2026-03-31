@@ -2,7 +2,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import React from "react";
 
-const MainLayot = ({ children }: { children: React.ReactNode }) => {
+const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="flex flex-col h-full w-full">
       <Navbar />
@@ -12,4 +12,4 @@ const MainLayot = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default MainLayot;
+export default MainLayout;
