@@ -14,10 +14,10 @@ export async function generateTTSAudio(
     voice?: string,
     response_format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac'
 ): Promise<ArrayBuffer> {
-    const apiKey = process.env.YARN_GTP_API_KEY;
+    const apiKey = process.env.YARN_GPT_API_KEY || process.env.YARN_GTP_API_KEY;
 
     if (!apiKey) {
-        throw new Error('YarnGPT API key is not configured');
+        throw new Error('YarnGPT API key is not configured. Please add YARN_GPT_API_KEY to your .env file.');
     }
 
     const requestBody: TTSRequest = {

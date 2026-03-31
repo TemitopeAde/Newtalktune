@@ -56,12 +56,12 @@ const ProgressBar = React.memo<{ step: number }>(({ step }) => (
     {[1, 2, 3, 4].map((i) => (
       <React.Fragment key={i}>
         <div
-          className={`h-1 w-16 rounded-full ${i <= step
+          className={`h-1 w-8 sm:w-16 rounded-full ${i <= step
             ? "bg-gradient-to-r from-[#8CBE41] to-background"
             : "bg-white"
             }`}
         />
-        {i < 4 && <div className="w-4" />}
+        {i < 4 && <div className="w-2 sm:w-4" />}
       </React.Fragment>
     ))}
   </div>
@@ -163,7 +163,7 @@ const StepOne = React.memo<{
             >
               <ChevronLeft className="w-6 h-6 text-white" />
             </button>
-            <h1 className="text-3xl font-bold text-white">Upload script</h1>
+            <h1 className="lg:text-3xl text-xl font-bold text-white">Upload script</h1>
           </div>
           <div className="flex relative bg-gray-700 rounded-sm p-1">
             <div
@@ -246,11 +246,10 @@ const StepOne = React.memo<{
           ) : (
             <div>
               <div
-                className={`relative rounded-md p-8 text-center cursor-pointer border border-[#475569] transition-colors ${
-                  dragActive
-                    ? "bg-white/10 border-[#8CBE41]"
-                    : "bg-transparent hover:bg-white/5"
-                }`}
+                className={`relative rounded-md p-8 text-center cursor-pointer border border-[#475569] transition-colors ${dragActive
+                  ? "bg-white/10 border-[#8CBE41]"
+                  : "bg-transparent hover:bg-white/5"
+                  }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -481,7 +480,7 @@ const StepTwo = React.memo<{
       )} */}
 
           {!isLoadingVoices && voiceModels.length > 0 && (
-            <div className="flex-shrink-0 px-4 mb-6 w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
+            <div className="px-4 mb-6 w-full max-w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
               <button
                 onClick={() => voiceModels[activeIndex] && onPlayVoice(voiceModels[activeIndex].id)}
                 disabled={!voiceModels[activeIndex]}
@@ -493,7 +492,7 @@ const StepTwo = React.memo<{
                   <Play fill="currentColor" className="w-4 h-4 text-white ml-0.5" />
                 )}
               </button>
-              <ProgressSlider />
+              <ProgressSlider className="flex-1 min-w-0" />
             </div>
           )}
         </div>
@@ -502,7 +501,7 @@ const StepTwo = React.memo<{
           <PrimaryBtn
             label="Generate Voiceover"
             onClick={onProceed}
-            containerclass="w-[400px]"
+            containerclass="w-full max-w-[400px]"
             disabled={isLoadingVoices || voiceModels.length === 0}
           />
         </div>
@@ -569,7 +568,7 @@ const StepThree = React.memo<{
             <h3 className="text-white text-lg font-medium">Choose language</h3>
             <ChevronDown className="ml-2 w-5 h-5 text-gray-400" />
           </div>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4 px-4">
             {languageOptions.map((language) => (
               <button
                 key={language.value}
@@ -812,7 +811,7 @@ const StepFive = React.memo<{
   <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
     <div className="flex-1 flex flex-col overflow-hidden items-center">
       <div className="flex-1 flex flex-col justify-center items-center">
-        <h5 className="text-3xl text-white font-semibold mb-6">
+        <h5 className="lg:text-3xl text-2xl text-white font-semibold mb-6 text-center">
           Processing Your Script
         </h5>
         <div className="w-[150px] h-[150px]">
@@ -830,7 +829,7 @@ const StepFive = React.memo<{
           />
         </div>
 
-        <div className="ring-1 ring-accent-foreground w-[400px] rounded-sm mt-10 bg-[#2D3E4280] pt-2 pb-1">
+        <div className="ring-1 ring-accent-foreground w-full max-w-[400px] rounded-sm mt-10 bg-[#2D3E4280] pt-2 pb-1 mx-auto">
           <div className="justify-between items-center flex px-4">
             <span className="font-semibold">
               {isLoading ? 'Uploading Script...' : 'Upload Complete!'}
@@ -841,13 +840,13 @@ const StepFive = React.memo<{
         </div>
 
         {error && (
-          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mt-4 w-[400px]">
+          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded mt-4 w-[400px]">
+          <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
             Script uploaded successfully!
           </div>
         )}
@@ -857,19 +856,19 @@ const StepFive = React.memo<{
           <PrimaryBtn
             onClick={handleFinalSubmit}
             label="Upload Script"
-            containerclass="w-[410px]"
+            containerclass="w-full max-w-[410px]"
           />
         ) : success ? (
           <PrimaryBtn
             onClick={onClose}
             label="Done"
-            containerclass="w-[410px] bg-green-500 hover:bg-green-600"
+            containerclass="w-full max-w-[410px] bg-green-500 hover:bg-green-600"
           />
         ) : (
           <PrimaryBtn
             onClick={onClose}
             label="Cancel"
-            containerclass="w-[410px] bg-red-500 hover:bg-red-600"
+            containerclass="w-full max-w-[410px] bg-red-500 hover:bg-red-600"
           />
         )}
       </div>
@@ -1510,7 +1509,7 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
   }, [projectData, activeTab, userId, uploadScript, onOpen, resetForm]);
 
   return (
-    <div className="h-full py-10 px-6 w-full flex flex-col overflow-hidden">
+    <div className="h-full py-10 px-4 md:px-6 w-full flex flex-col overflow-hidden">
       <ProgressBar step={currentStep} />
       <svg style={{ height: 0 }}>
         <defs>
