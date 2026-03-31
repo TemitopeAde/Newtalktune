@@ -360,13 +360,15 @@ const StepTwo = React.memo<{
 
   return (
     <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden relative">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 flex items-center mb-8 w-full justify-start">
-          <h1 className="text-3xl font-bold text-white">Select Voice Model</h1>
-        </div>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col pb-12 sm:pb-4">
+          {/* Title */}
+          <div className="flex items-center mb-8 w-full justify-start">
+            <h1 className="text-3xl font-bold text-white">Select Voice Model</h1>
+          </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6 flex flex-col items-center">
-          <div className="flex-shrink-0 relative mb-8 w-full">
+          {/* Voice carousel content */}
+          <div className="relative mb-8 w-full">
             {isLoadingVoices ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8CBE41]"></div>
@@ -380,7 +382,7 @@ const StepTwo = React.memo<{
                 {getVisibleItems().map((item) => (
                   <div
                     key={`${item.id}-${item.position}`}
-                    className="absolute transition-all  duration-500 ease-out cursor-pointer"
+                    className="absolute transition-all duration-500 ease-out cursor-pointer"
                     style={getItemStyles(item.position)}
                     onClick={() => {
                       if (item.position !== 0) {
@@ -405,8 +407,7 @@ const StepTwo = React.memo<{
                             sizes="(max-width: 640px) 100vw, 300px"
                           />
                         ) : (
-                          <span className={`font-bold text-white ${item.position === 0 ? "text-4xl" : "text-3xl"
-                            }`}>
+                          <span className={`font-bold text-white ${item.position === 0 ? "text-4xl" : "text-3xl"}`}>
                             {item.name
                               .split(" ")
                               .map((n: string) => n[0])
@@ -421,24 +422,17 @@ const StepTwo = React.memo<{
                         <div className="absolute inset-0 bg-black/40" />
                       )}
 
-                      {/* Navigation arrows for active item */}
                       {item.position === 0 && voiceModels.length > 1 && (
                         <>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              goToPrevious();
-                            }}
+                            onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
                             className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors border border-white/30 z-10"
                             title="Previous voice"
                           >
                             <ChevronLeft className="w-5 h-5 text-white" />
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              goToNext();
-                            }}
+                            onClick={(e) => { e.stopPropagation(); goToNext(); }}
                             className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors border border-white/30 z-10"
                             title="Next voice"
                           >
@@ -453,25 +447,9 @@ const StepTwo = React.memo<{
             )}
           </div>
 
-          {/* {!isLoadingVoices && voiceModels.length > 0 && (
-        <div className="flex-shrink-0 flex justify-center mb-8">
-          <div className="flex space-x-2">
-            {voiceModels.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`w-3 h-3 rounded-full transition-colors duration-300 ${activeIndex === index
-                  ? "bg-[#01796F] w-9"
-                  : "bg-gray-600 hover:bg-gray-500"
-                  }`}
-              />
-            ))}
-          </div>
-        </div>
-      )} */}
-
+          {/* Audio player */}
           {!isLoadingVoices && voiceModels.length > 0 && (
-            <div className="px-4 mb-6 w-full max-w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
+            <div className="px-4 mb-6 w-full max-w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center mx-auto">
               <button
                 onClick={() => voiceModels[activeIndex] && onPlayVoice(voiceModels[activeIndex].id)}
                 disabled={!voiceModels[activeIndex]}
@@ -486,20 +464,22 @@ const StepTwo = React.memo<{
               <ProgressSlider className="flex-1 min-w-0" />
             </div>
           )}
-        </div>
 
-        <div className="flex-shrink-0 w-full flex justify-center pt-4 pb-12 sm:pb-4">
-          <PrimaryBtn
-            label="Generate Voiceover"
-            onClick={onProceed}
-            containerclass="w-full max-w-[400px]"
-            disabled={isLoadingVoices || voiceModels.length === 0}
-          />
+          {/* Action button */}
+          <div className="w-full flex justify-center pt-4">
+            <PrimaryBtn
+              label="Generate Voiceover"
+              onClick={onProceed}
+              containerclass="w-full max-w-[400px]"
+              disabled={isLoadingVoices || voiceModels.length === 0}
+            />
+          </div>
         </div>
       </div>
       <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
     </div>
   );
+
 });
 
 const StepThree = React.memo<{
