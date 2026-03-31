@@ -427,7 +427,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
             </div>
           )}
 
-          <button
+          {/* <button
             onClick={handleOpenSettings}
             className="p-2 ml-2 rounded-full bg-gray-700 hover:bg-gray-600"
           >
@@ -477,7 +477,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
                 strokeWidth="1.5"
               />
             </svg>
-          </button>
+          </button> */}
         </div>
 
         {openSettings && (
