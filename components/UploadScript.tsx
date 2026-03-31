@@ -179,7 +179,7 @@ const StepOne = React.memo<{
           </div>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
           <input
             ref={projectNameInputRef}
             type="text"
@@ -360,7 +360,7 @@ const StepTwo = React.memo<{
 
   return (
     <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden relative">
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col pb-12 sm:pb-4">
           {/* Title */}
           <div className="flex items-center mb-8 w-full justify-start">
@@ -533,7 +533,7 @@ const StepThree = React.memo<{
         <h1 className="text-3xl font-bold text-white">Choose Language</h1>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-4 mb-6">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-6">
         <div>
           <div className="flex items-center mb-4">
             <h3 className="text-white text-lg font-medium">Choose language</h3>
@@ -667,7 +667,7 @@ const StepFour = React.memo<{
         <h1 className="text-3xl font-bold text-white">Audio Preview</h1>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
         {/* Script Preview */}
         <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
           <h3 className="text-white text-lg font-medium mb-3">Script Content</h3>
