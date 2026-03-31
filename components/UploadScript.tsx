@@ -3,7 +3,7 @@
 import "react-circular-progressbar/dist/styles.css";
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { ChevronDown, Upload, Play, ChevronLeft, ChevronRight, Pause } from "lucide-react";
+import { ChevronDown, Upload, Play, ChevronLeft, ChevronRight, Pause, X } from "lucide-react";
 import Image from "next/image";
 import { Textarea } from "./ui/textarea";
 import PrimaryBtn from "./buttons/PrimaryBtn";
@@ -314,6 +314,7 @@ const StepTwo = React.memo<{
   setActiveIndex: (index: number) => void;
   isLoadingVoices: boolean;
   onProceed: () => void;
+  onClose: () => void;
   playingVoiceId: string | null;
   onPlayVoice: (voiceId: string) => void;
 }>(({
@@ -327,6 +328,7 @@ const StepTwo = React.memo<{
   setActiveIndex,
   isLoadingVoices,
   onProceed,
+  onClose,
   playingVoiceId,
   onPlayVoice
 }) => {
@@ -359,14 +361,10 @@ const StepTwo = React.memo<{
   }, [voiceModels, isLoadingVoices]);
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden relative">
+    <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col pb-12 sm:pb-4">
-          {/* Title */}
-          <div className="flex items-center mb-8 w-full justify-start">
-            <h1 className="text-3xl font-bold text-white">Select Voice Model</h1>
-          </div>
-
+          <h1 className="lg:text-3xl text-2xl font-bold text-white mb-8">Select Voice Model</h1>
           {/* Voice carousel content */}
           <div className="relative mb-8 w-full">
             {isLoadingVoices ? (
@@ -657,118 +655,95 @@ const StepFour = React.memo<{
 
   return (
     <div className="w-full mx-auto h-full flex flex-col overflow-hidden relative">
-      <div className="flex-shrink-0 flex items-center mb-8">
-        <button
-          onClick={() => setCurrentStep(3)}
-          className="mr-6 p-2 rounded-full bg-gray-700 hover:bg-gray-600"
-        >
-          <ChevronLeft className="w-6 h-6 text-white" />
-        </button>
-        <h1 className="text-3xl font-bold text-white">Audio Preview</h1>
-      </div>
-
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
-        {/* Script Preview */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
-          <h3 className="text-white text-lg font-medium mb-3">Script Content</h3>
-          <div className="bg-white/5 rounded p-3 max-h-32 overflow-y-auto">
-            <p className="text-gray-300 text-sm whitespace-pre-wrap">
-              {projectData.content || "No content available"}
-            </p>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex flex-col pb-12 sm:pb-4">
+          {/* Title row */}
+          <div className="flex items-center mb-8">
+            <button
+              onClick={() => setCurrentStep(3)}
+              className="mr-6 p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            <h1 className="text-3xl font-bold text-white">Audio Preview</h1>
           </div>
-        </div>
 
-        {/* Voice Settings Summary */}
-        {/* <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
-          <h3 className="text-white text-lg font-medium mb-3">Voice Settings</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Gender:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.gender}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Age:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.age}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Language:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.language}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Mood:</span>
-              <span className="text-white ml-2">{projectData.voiceSettings.mood}</span>
+          {/* Script Preview */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4 mb-6">
+            <h3 className="text-white text-lg font-medium mb-3">Script Content</h3>
+            <div className="bg-white/5 rounded p-3 max-h-32 overflow-y-auto scrollbar-hide">
+              <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                {projectData.content || "No content available"}
+              </p>
             </div>
           </div>
-        </div> */}
 
-        {/* Audio Preview Section */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white text-lg font-medium">Audio Preview</h3>
+          {/* Audio Preview Section */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white text-lg font-medium">Audio Preview</h3>
+              <PrimaryBtn
+                label={isGeneratingPreview ? "Generating..." : "Generate Preview"}
+                onClick={onGeneratePreview}
+                containerclass="w-auto px-4 py-2 text-sm"
+                disabled={isGeneratingPreview}
+              />
+            </div>
+
+            {previewError && (
+              <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mb-4">
+                {previewError}
+              </div>
+            )}
+
+            {previewAudio && (
+              <div className="bg-white/5 rounded p-4">
+                <div ref={waveformRef} className="mb-4" />
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <button
+                    onClick={handlePlayPause}
+                    className="w-12 h-12 rounded-full bg-[#8CBE41] hover:bg-[#6b952a] flex items-center justify-center transition-colors"
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-6 h-6 text-white" />
+                    ) : (
+                      <Play className="w-6 h-6 text-white ml-1" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-gray-400 text-xs mt-4 text-center">
+                  Preview generated successfully. This is how your script will sound.
+                </p>
+              </div>
+            )}
+
+            {!previewAudio && !isGeneratingPreview && (
+              <div className="bg-white/5 rounded p-4 text-center">
+                <p className="text-gray-400">Click &quot;Generate Preview&quot; to hear how your script will sound.</p>
+              </div>
+            )}
+
+            {isGeneratingPreview && (
+              <div className="bg-white/5 rounded p-4 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8CBE41] mx-auto mb-2"></div>
+                <p className="text-gray-400">Generating audio preview...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Proceed button */}
+          <div className="w-full justify-center flex pt-4">
             <PrimaryBtn
-              label={isGeneratingPreview ? "Generating..." : "Generate Preview"}
-              onClick={onGeneratePreview}
-              containerclass="w-auto px-4 py-2 text-sm"
+              onClick={() => setCurrentStep(5)}
+              label="Proceed to Upload"
+              containerclass="w-full max-w-[400px]"
               disabled={isGeneratingPreview}
             />
           </div>
-
-          {previewError && (
-            <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mb-4">
-              {previewError}
-            </div>
-          )}
-
-          {previewAudio && (
-            <div className="bg-white/5 rounded p-4">
-              {/* WaveSurfer Waveform */}
-              <div ref={waveformRef} className="mb-4" />
-
-              {/* Play/Pause Button */}
-              <div className="flex items-center justify-center gap-4 mt-4">
-                <button
-                  onClick={handlePlayPause}
-                  className="w-12 h-12 rounded-full bg-[#8CBE41] hover:bg-[#6b952a] flex items-center justify-center transition-colors"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-6 h-6 text-white" />
-                  ) : (
-                    <Play className="w-6 h-6 text-white ml-1" />
-                  )}
-                </button>
-              </div>
-
-              <p className="text-gray-400 text-xs mt-4 text-center">
-                Preview generated successfully. This is how your script will sound.
-              </p>
-            </div>
-          )}
-
-          {!previewAudio && !isGeneratingPreview && (
-            <div className="bg-white/5 rounded p-4 text-center">
-              <p className="text-gray-400">Click "Generate Preview" to hear how your script will sound.</p>
-            </div>
-          )}
-
-          {isGeneratingPreview && (
-            <div className="bg-white/5 rounded p-4 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8CBE41] mx-auto mb-2"></div>
-              <p className="text-gray-400">Generating audio preview...</p>
-            </div>
-          )}
         </div>
-      </div >
-
-      <div className="flex-shrink-0 w-full justify-center flex pt-4 pb-12 sm:pb-4">
-        <PrimaryBtn
-          onClick={() => setCurrentStep(5)}
-          label="Proceed to Upload"
-          containerclass="w-[400px]"
-          disabled={isGeneratingPreview}
-        />
       </div>
       <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
-    </div >
+    </div>
   );
 });
 
@@ -1528,7 +1503,17 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
   }, [projectData, activeTab, userId, uploadScript, onOpen, resetForm]);
 
   return (
-    <div className="h-full pt-10 pb-20 md:pb-10 px-4 md:px-6 w-full flex flex-col overflow-hidden">
+    <div className="h-full pt-10 pb-20 md:pb-10 px-4 md:px-6 w-full flex flex-col overflow-hidden relative">
+      {/* Close button - top-right corner of entire modal, shown only on voice model step */}
+      {currentStep === 1 && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
+      )}
       <ProgressBar step={currentStep} />
       <svg style={{ height: 0 }}>
         <defs>
@@ -1551,6 +1536,7 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
           setActiveIndex={setActiveIndex}
           isLoadingVoices={loadingVoices}
           onProceed={handleVoiceModelProceed}
+          onClose={onClose}
           playingVoiceId={playingVoiceId}
           onPlayVoice={handlePlayVoice}
         />
