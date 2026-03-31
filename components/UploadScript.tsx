@@ -67,20 +67,32 @@ const ProgressBar = React.memo<{ step: number }>(({ step }) => (
   </div>
 ));
 
-const ScrollIndicator = React.memo<{ show: boolean }>(({ show }) => (
-  <div
-    className={`absolute bottom-0 left-0 right-0 h-20 pointer-events-none transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'
-      }`}
-    style={{
-      background: 'linear-gradient(to top, rgba(13, 30, 64, 0.95), transparent)'
-    }}
-  >
-    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
-      <ChevronDown className="w-6 h-6 text-white animate-bounce" />
-      <span className="text-white text-sm mt-1">Scroll down</span>
+const ScrollIndicator = React.memo<{
+  show: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+}>(({ show, scrollContainerRef }) => {
+  const handleClick = () => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div
+      className={`absolute bottom-0 left-0 right-0 h-20 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      style={{ background: 'linear-gradient(to top, rgba(13, 30, 64, 0.95), transparent)' }}
+    >
+      <button
+        onClick={handleClick}
+        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center cursor-pointer focus:outline-none"
+        aria-label="Scroll down"
+      >
+        <ChevronDown className="w-6 h-6 text-white animate-bounce" />
+        <span className="text-white text-sm mt-1">Scroll down</span>
+      </button>
     </div>
-  </div>
-));
+  );
+});
 
 const StepOne = React.memo<{
   activeTab: string;
@@ -307,7 +319,7 @@ const StepOne = React.memo<{
           containerclass="w-[400px]"
         />
       </div>
-      <ScrollIndicator show={showScrollIndicator} />
+      <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
     </div >
   );
 });
@@ -497,7 +509,7 @@ const StepTwo = React.memo<{
           )}
         </div>
 
-        <div className="flex-shrink-0 w-full flex justify-center pt-4">
+        <div className="flex-shrink-0 w-full flex justify-center pt-4 pb-12 sm:pb-4">
           <PrimaryBtn
             label="Generate Voiceover"
             onClick={onProceed}
@@ -506,7 +518,7 @@ const StepTwo = React.memo<{
           />
         </div>
       </div>
-      <ScrollIndicator show={showScrollIndicator} />
+      <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
     </div>
   );
 });
@@ -585,14 +597,14 @@ const StepThree = React.memo<{
           </div>
         </div>
       </div>
-      <div className="flex-shrink-0 w-full justify-center flex pt-4">
+      <div className="flex-shrink-0 w-full justify-center flex pt-4 pb-12 sm:pb-4">
         <PrimaryBtn
           onClick={() => setCurrentStep(4)}
           label="Generate Audio Preview"
           containerclass="w-[400px]"
         />
       </div>
-      <ScrollIndicator show={showScrollIndicator} />
+      <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
     </div>
   );
 });
@@ -788,7 +800,7 @@ const StepFour = React.memo<{
         </div>
       </div >
 
-      <div className="flex-shrink-0 w-full justify-center flex pt-4">
+      <div className="flex-shrink-0 w-full justify-center flex pt-4 pb-12 sm:pb-4">
         <PrimaryBtn
           onClick={() => setCurrentStep(5)}
           label="Proceed to Upload"
@@ -796,7 +808,7 @@ const StepFour = React.memo<{
           disabled={isGeneratingPreview}
         />
       </div>
-      <ScrollIndicator show={showScrollIndicator} />
+      <ScrollIndicator show={showScrollIndicator} scrollContainerRef={scrollContainerRef} />
     </div >
   );
 });
@@ -851,7 +863,7 @@ const StepFive = React.memo<{
           </div>
         )}
       </div>
-      <div className="flex-shrink-0 w-full flex justify-center pt-6">
+      <div className="flex-shrink-0 w-full flex justify-center pt-6 pb-12 sm:pb-6">
         {!isLoading && !success ? (
           <PrimaryBtn
             onClick={handleFinalSubmit}
@@ -1509,7 +1521,7 @@ const UploadScript: React.FC<UploadScriptProps> = ({ selectedVoiceModelId }) => 
   }, [projectData, activeTab, userId, uploadScript, onOpen, resetForm]);
 
   return (
-    <div className="h-full py-10 px-4 md:px-6 w-full flex flex-col overflow-hidden">
+    <div className="h-full pt-10 pb-20 md:pb-10 px-4 md:px-6 w-full flex flex-col overflow-hidden">
       <ProgressBar step={currentStep} />
       <svg style={{ height: 0 }}>
         <defs>
