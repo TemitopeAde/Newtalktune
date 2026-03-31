@@ -8,7 +8,7 @@ const MainModal = () => {
   if (!isOpen || type !== "modal") return;
   return (
     <div className="fixed h-screen w-screen z-40 bg-gray-900/50 backdrop-blur-sm justify-center items-center flex">
-      <div className="z-40 w-full h-full bg-background ring-2 ring-white rounded-2xl max-w-5xl max-h-[90vh] md:max-h-[85vh] backdrop-blur-sm justify-center items-center flex overflow-y-auto custom-scrollbar">
+      <div className="z-40 w-full h-full bg-background ring-2 ring-white rounded-2xl max-w-5xl max-h-[90vh] md:max-h-[85vh] backdrop-blur-sm justify-center items-center flex overflow-hidden">
         {data}
       </div>
       <div

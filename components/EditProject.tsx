@@ -106,7 +106,15 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
   }, [audioUrl]);
 
   const handleBack = () => {
-    onOpen("modal", <Project script={script} />);
+    // Pass updated script data back if audio was generated
+    const updatedScript = {
+      ...script,
+      audioFileUrl: audioUrl,
+      audioGenerated: !!audioUrl,
+      projectName: projectName,
+      content: articleContent
+    };
+    onOpen("modal", <Project script={updatedScript} />);
   };
 
   const handleUpdateHighlight = () => {
@@ -637,7 +645,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
 
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
+          "fixed bottom-[42px] left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
           "max-sm:px-4"
         )}
         style={{
