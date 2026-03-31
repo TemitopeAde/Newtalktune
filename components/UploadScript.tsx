@@ -798,74 +798,122 @@ const StepFive = React.memo<{
   success: boolean;
   handleFinalSubmit: () => void;
   onClose: () => void;
-}>(({ isLoading, error, success, handleFinalSubmit, onClose }) => (
-  <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
-    <div className="flex-1 flex flex-col overflow-hidden items-center">
-      <div className="flex-1 flex flex-col justify-center items-center">
-        <h5 className="lg:text-3xl text-2xl text-white font-semibold mb-6 text-center">
-          Processing Your Script
-        </h5>
-        <div className="w-[150px] h-[150px]">
-          <CircularProgressbar
-            value={isLoading ? 66 : 100}
-            text={isLoading ? `66%` : `100%`}
-            styles={buildStyles({
-              textSize: "14px",
-              pathTransitionDuration: 0.9,
-              pathColor: "url(#gradientStroke)",
-              textColor: "#fff",
-              trailColor: "#d6d6d6",
-              backgroundColor: "#3e98c7",
-            })}
-          />
+}>(({ isLoading, error, success, handleFinalSubmit, onClose }) => {
+  const [progress, setProgress] = useState(0);
+
+  // Messages based on progress milestones
+  const getStatusMessage = (p: number) => {
+    if (p < 25) return 'Preparing your script...';
+    if (p < 55) return 'Generating audio...';
+    if (p < 80) return 'Saving to cloud...';
+    if (p < 100) return 'Almost done...';
+    return 'Upload Complete!';
+  };
+
+  useEffect(() => {
+    if (!isLoading && !success) {
+      // Reset on mount before submitting
+      setProgress(0);
+      return;
+    }
+
+    if (success) {
+      // Animate to 100
+      const timer = setTimeout(() => setProgress(100), 200);
+      return () => clearTimeout(timer);
+    }
+
+    if (isLoading) {
+      // Start from 0 and count up to 90 over ~8 seconds
+      setProgress(0);
+      // Use intervals to slowly increment
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return prev;
+          }
+          // Slow down near 90
+          const increment = prev < 50 ? 3 : prev < 75 ? 1.5 : 0.5;
+          return Math.min(prev + increment, 90);
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading, success]);
+
+  const displayProgress = Math.round(progress);
+
+  return (
+    <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden items-center">
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <h5 className="lg:text-3xl text-2xl text-white font-semibold mb-6 text-center">
+            Processing Your Script
+          </h5>
+          <div className="w-[150px] h-[150px]">
+            <CircularProgressbar
+              value={displayProgress}
+              text={`${displayProgress}%`}
+              styles={buildStyles({
+                textSize: "14px",
+                pathTransitionDuration: 0.5,
+                pathColor: "url(#gradientStroke)",
+                textColor: "#fff",
+                trailColor: "#d6d6d6",
+                backgroundColor: "#3e98c7",
+              })}
+            />
+          </div>
+
+          <div className="ring-1 ring-accent-foreground w-full max-w-[400px] rounded-sm mt-10 bg-[#2D3E4280] pt-2 pb-1 mx-auto">
+            <div className="justify-between items-center flex px-4">
+              <span className="font-semibold transition-all duration-500">
+                {getStatusMessage(displayProgress)}
+              </span>
+              <span className="text-gray-400 text-sm">1/2</span>
+            </div>
+            <ProgressSlider isAdjustable={false} value={displayProgress} />
+          </div>
+
+          {error && (
+            <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
+              Script uploaded successfully!
+            </div>
+          )}
         </div>
-
-        <div className="ring-1 ring-accent-foreground w-full max-w-[400px] rounded-sm mt-10 bg-[#2D3E4280] pt-2 pb-1 mx-auto">
-          <div className="justify-between items-center flex px-4">
-            <span className="font-semibold">
-              {isLoading ? 'Uploading Script...' : 'Upload Complete!'}
-            </span>
-            <span className="text-gray-400 text-sm">1/2</span>
-          </div>
-          <ProgressSlider isAdjustable={false} value={isLoading ? 70 : 100} />
+        <div className="flex-shrink-0 w-full flex justify-center pt-6 pb-12 sm:pb-6">
+          {!isLoading && !success ? (
+            <PrimaryBtn
+              onClick={handleFinalSubmit}
+              label="Upload Script"
+              containerclass="w-full max-w-[410px]"
+            />
+          ) : success ? (
+            <PrimaryBtn
+              onClick={onClose}
+              label="Done"
+              containerclass="w-full max-w-[410px] bg-green-500 hover:bg-green-600"
+            />
+          ) : (
+            <PrimaryBtn
+              onClick={onClose}
+              label="Cancel"
+              containerclass="w-full max-w-[410px] bg-red-500 hover:bg-red-600"
+            />
+          )}
         </div>
-
-        {error && (
-          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded mt-4 w-full max-w-[400px] mx-auto">
-            Script uploaded successfully!
-          </div>
-        )}
-      </div>
-      <div className="flex-shrink-0 w-full flex justify-center pt-6 pb-12 sm:pb-6">
-        {!isLoading && !success ? (
-          <PrimaryBtn
-            onClick={handleFinalSubmit}
-            label="Upload Script"
-            containerclass="w-full max-w-[410px]"
-          />
-        ) : success ? (
-          <PrimaryBtn
-            onClick={onClose}
-            label="Done"
-            containerclass="w-full max-w-[410px] bg-green-500 hover:bg-green-600"
-          />
-        ) : (
-          <PrimaryBtn
-            onClick={onClose}
-            label="Cancel"
-            containerclass="w-full max-w-[410px] bg-red-500 hover:bg-red-600"
-          />
-        )}
       </div>
     </div>
-  </div>
-));
+  );
+});
+
 
 interface UploadScriptProps {
   selectedVoiceModelId?: string;
