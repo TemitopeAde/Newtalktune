@@ -70,29 +70,8 @@ const ProgressBar = React.memo<{ step: number }>(({ step }) => (
 const ScrollIndicator = React.memo<{
   show: boolean;
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
-}>(({ show, scrollContainerRef }) => {
-  const handleClick = () => {
-    if (scrollContainerRef?.current) {
-      scrollContainerRef.current.scrollBy({ top: 200, behavior: 'smooth' });
-    }
-  };
+}>(({ show: _show, scrollContainerRef: _ref }) => null);
 
-  return (
-    <div
-      className={`absolute bottom-0 left-0 right-0 h-20 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      style={{ background: 'linear-gradient(to top, rgba(13, 30, 64, 0.95), transparent)' }}
-    >
-      <button
-        onClick={handleClick}
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center cursor-pointer focus:outline-none"
-        aria-label="Scroll down"
-      >
-        <ChevronDown className="w-6 h-6 text-white animate-bounce" />
-        <span className="text-white text-sm mt-1">Scroll down</span>
-      </button>
-    </div>
-  );
-});
 
 const StepOne = React.memo<{
   activeTab: string;
@@ -200,7 +179,7 @@ const StepOne = React.memo<{
           </div>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6">
           <input
             ref={projectNameInputRef}
             type="text"
@@ -386,7 +365,7 @@ const StepTwo = React.memo<{
           <h1 className="text-3xl font-bold text-white">Select Voice Model</h1>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6 flex flex-col items-center">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6 flex flex-col items-center">
           <div className="flex-shrink-0 relative mb-8 w-full">
             {isLoadingVoices ? (
               <div className="flex justify-center items-center h-64">
@@ -574,7 +553,7 @@ const StepThree = React.memo<{
         <h1 className="text-3xl font-bold text-white">Choose Language</h1>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-6">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-4 mb-6">
         <div>
           <div className="flex items-center mb-4">
             <h3 className="text-white text-lg font-medium">Choose language</h3>
@@ -708,7 +687,7 @@ const StepFour = React.memo<{
         <h1 className="text-3xl font-bold text-white">Audio Preview</h1>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar space-y-6 mb-6">
         {/* Script Preview */}
         <div className="bg-white/10 backdrop-blur-lg rounded-sm p-4">
           <h3 className="text-white text-lg font-medium mb-3">Script Content</h3>
