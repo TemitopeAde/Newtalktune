@@ -252,6 +252,7 @@ function LoginForm() {
         </button>
       </div>
 
+      
       <p className="text-sm text-gray-300 font-medium text-right w-full">
         Don&apos;t have an account?{" "}
         <Link
