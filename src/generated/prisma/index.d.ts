@@ -9163,6 +9163,9 @@ export namespace Prisma {
     name: string | null
     email: string | null
     message: string | null
+    isRead: boolean | null
+    adminReply: string | null
+    repliedAt: Date | null
     createdAt: Date | null
   }
 
@@ -9171,6 +9174,9 @@ export namespace Prisma {
     name: string | null
     email: string | null
     message: string | null
+    isRead: boolean | null
+    adminReply: string | null
+    repliedAt: Date | null
     createdAt: Date | null
   }
 
@@ -9179,6 +9185,9 @@ export namespace Prisma {
     name: number
     email: number
     message: number
+    isRead: number
+    adminReply: number
+    repliedAt: number
     createdAt: number
     _all: number
   }
@@ -9189,6 +9198,9 @@ export namespace Prisma {
     name?: true
     email?: true
     message?: true
+    isRead?: true
+    adminReply?: true
+    repliedAt?: true
     createdAt?: true
   }
 
@@ -9197,6 +9209,9 @@ export namespace Prisma {
     name?: true
     email?: true
     message?: true
+    isRead?: true
+    adminReply?: true
+    repliedAt?: true
     createdAt?: true
   }
 
@@ -9205,6 +9220,9 @@ export namespace Prisma {
     name?: true
     email?: true
     message?: true
+    isRead?: true
+    adminReply?: true
+    repliedAt?: true
     createdAt?: true
     _all?: true
   }
@@ -9286,6 +9304,9 @@ export namespace Prisma {
     name: string
     email: string
     message: string
+    isRead: boolean
+    adminReply: string | null
+    repliedAt: Date | null
     createdAt: Date
     _count: ContactMessageCountAggregateOutputType | null
     _min: ContactMessageMinAggregateOutputType | null
@@ -9311,6 +9332,9 @@ export namespace Prisma {
     name?: boolean
     email?: boolean
     message?: boolean
+    isRead?: boolean
+    adminReply?: boolean
+    repliedAt?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["contactMessage"]>
 
@@ -9319,6 +9343,9 @@ export namespace Prisma {
     name?: boolean
     email?: boolean
     message?: boolean
+    isRead?: boolean
+    adminReply?: boolean
+    repliedAt?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["contactMessage"]>
 
@@ -9327,6 +9354,9 @@ export namespace Prisma {
     name?: boolean
     email?: boolean
     message?: boolean
+    isRead?: boolean
+    adminReply?: boolean
+    repliedAt?: boolean
     createdAt?: boolean
   }, ExtArgs["result"]["contactMessage"]>
 
@@ -9335,10 +9365,13 @@ export namespace Prisma {
     name?: boolean
     email?: boolean
     message?: boolean
+    isRead?: boolean
+    adminReply?: boolean
+    repliedAt?: boolean
     createdAt?: boolean
   }
 
-  export type ContactMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "message" | "createdAt", ExtArgs["result"]["contactMessage"]>
+  export type ContactMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "message" | "isRead" | "adminReply" | "repliedAt" | "createdAt", ExtArgs["result"]["contactMessage"]>
 
   export type $ContactMessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "ContactMessage"
@@ -9348,6 +9381,9 @@ export namespace Prisma {
       name: string
       email: string
       message: string
+      isRead: boolean
+      adminReply: string | null
+      repliedAt: Date | null
       createdAt: Date
     }, ExtArgs["result"]["contactMessage"]>
     composites: {}
@@ -9776,6 +9812,9 @@ export namespace Prisma {
     readonly name: FieldRef<"ContactMessage", 'String'>
     readonly email: FieldRef<"ContactMessage", 'String'>
     readonly message: FieldRef<"ContactMessage", 'String'>
+    readonly isRead: FieldRef<"ContactMessage", 'Boolean'>
+    readonly adminReply: FieldRef<"ContactMessage", 'String'>
+    readonly repliedAt: FieldRef<"ContactMessage", 'DateTime'>
     readonly createdAt: FieldRef<"ContactMessage", 'DateTime'>
   }
     
@@ -15590,6 +15629,9 @@ export namespace Prisma {
     name: 'name',
     email: 'email',
     message: 'message',
+    isRead: 'isRead',
+    adminReply: 'adminReply',
+    repliedAt: 'repliedAt',
     createdAt: 'createdAt'
   };
 
@@ -16392,6 +16434,9 @@ export namespace Prisma {
     name?: StringFilter<"ContactMessage"> | string
     email?: StringFilter<"ContactMessage"> | string
     message?: StringFilter<"ContactMessage"> | string
+    isRead?: BoolFilter<"ContactMessage"> | boolean
+    adminReply?: StringNullableFilter<"ContactMessage"> | string | null
+    repliedAt?: DateTimeNullableFilter<"ContactMessage"> | Date | string | null
     createdAt?: DateTimeFilter<"ContactMessage"> | Date | string
   }
 
@@ -16400,6 +16445,9 @@ export namespace Prisma {
     name?: SortOrder
     email?: SortOrder
     message?: SortOrder
+    isRead?: SortOrder
+    adminReply?: SortOrderInput | SortOrder
+    repliedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
   }
 
@@ -16411,6 +16459,9 @@ export namespace Prisma {
     name?: StringFilter<"ContactMessage"> | string
     email?: StringFilter<"ContactMessage"> | string
     message?: StringFilter<"ContactMessage"> | string
+    isRead?: BoolFilter<"ContactMessage"> | boolean
+    adminReply?: StringNullableFilter<"ContactMessage"> | string | null
+    repliedAt?: DateTimeNullableFilter<"ContactMessage"> | Date | string | null
     createdAt?: DateTimeFilter<"ContactMessage"> | Date | string
   }, "id">
 
@@ -16419,6 +16470,9 @@ export namespace Prisma {
     name?: SortOrder
     email?: SortOrder
     message?: SortOrder
+    isRead?: SortOrder
+    adminReply?: SortOrderInput | SortOrder
+    repliedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: ContactMessageCountOrderByAggregateInput
     _max?: ContactMessageMaxOrderByAggregateInput
@@ -16433,6 +16487,9 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"ContactMessage"> | string
     email?: StringWithAggregatesFilter<"ContactMessage"> | string
     message?: StringWithAggregatesFilter<"ContactMessage"> | string
+    isRead?: BoolWithAggregatesFilter<"ContactMessage"> | boolean
+    adminReply?: StringNullableWithAggregatesFilter<"ContactMessage"> | string | null
+    repliedAt?: DateTimeNullableWithAggregatesFilter<"ContactMessage"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"ContactMessage"> | Date | string
   }
 
@@ -17384,6 +17441,9 @@ export namespace Prisma {
     name: string
     email: string
     message: string
+    isRead?: boolean
+    adminReply?: string | null
+    repliedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -17392,6 +17452,9 @@ export namespace Prisma {
     name: string
     email: string
     message: string
+    isRead?: boolean
+    adminReply?: string | null
+    repliedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -17400,6 +17463,9 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    adminReply?: NullableStringFieldUpdateOperationsInput | string | null
+    repliedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -17408,6 +17474,9 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    adminReply?: NullableStringFieldUpdateOperationsInput | string | null
+    repliedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -17416,6 +17485,9 @@ export namespace Prisma {
     name: string
     email: string
     message: string
+    isRead?: boolean
+    adminReply?: string | null
+    repliedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -17424,6 +17496,9 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    adminReply?: NullableStringFieldUpdateOperationsInput | string | null
+    repliedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -17432,6 +17507,9 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    adminReply?: NullableStringFieldUpdateOperationsInput | string | null
+    repliedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -18494,6 +18572,9 @@ export namespace Prisma {
     name?: SortOrder
     email?: SortOrder
     message?: SortOrder
+    isRead?: SortOrder
+    adminReply?: SortOrder
+    repliedAt?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -18502,6 +18583,9 @@ export namespace Prisma {
     name?: SortOrder
     email?: SortOrder
     message?: SortOrder
+    isRead?: SortOrder
+    adminReply?: SortOrder
+    repliedAt?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -18510,6 +18594,9 @@ export namespace Prisma {
     name?: SortOrder
     email?: SortOrder
     message?: SortOrder
+    isRead?: SortOrder
+    adminReply?: SortOrder
+    repliedAt?: SortOrder
     createdAt?: SortOrder
   }
 

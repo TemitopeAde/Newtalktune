@@ -115,7 +115,11 @@ const Project = ({ script }: ProjectProps) => {
   };
 
   const handleShare = (platform: 'whatsapp' | 'telegram' | 'twitter') => {
-    const url = `${window.location.origin}/project/${script.id}`;
+    if (!script.audioFileUrl) {
+      toast.error("Generate audio before sharing");
+      return;
+    }
+    const url = script.audioFileUrl;
     const text = `Check out my voiceover: ${script.projectName}`;
 
     let shareUrl = '';
@@ -296,8 +300,8 @@ const Project = ({ script }: ProjectProps) => {
         )}
       </div>
 
-      <div className="bg-[#3F4B65] h-[99px] w-full justify-center rounded-md items-center flex space-x-4">
-        <div onClick={handleSave}>
+      <div className="bg-[#3F4B65] min-h-[99px] py-4 w-full justify-center rounded-md items-start flex flex-wrap gap-4 overflow-x-hidden">
+        <div className="flex flex-col items-center min-w-[60px]" onClick={handleSave}>
           <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
             <svg
               width="24"
@@ -325,7 +329,7 @@ const Project = ({ script }: ProjectProps) => {
         </div>
         <Popover>
           <PopoverTrigger>
-            <div>
+            <div className="flex flex-col items-center min-w-[60px]">
               <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
                 <svg
                   width="25"
@@ -414,7 +418,7 @@ const Project = ({ script }: ProjectProps) => {
           </PopoverContent>
         </Popover>
 
-        <div onClick={isDuplicating ? undefined : handleDuplicate}>
+        <div className="flex flex-col items-center min-w-[60px]" onClick={isDuplicating ? undefined : handleDuplicate}>
           <div className={`h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 ${isDuplicating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             {isDuplicating ? (
               <Loader2 className="w-6 h-6 text-white animate-spin" />
@@ -446,8 +450,8 @@ const Project = ({ script }: ProjectProps) => {
           <span className="text-xs font-medium">{isDuplicating ? 'Duplicating...' : 'Duplicate'}</span>
         </div>
 
-        <div onClick={handleCopylink}>
-          <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex flex-col  rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
+        <div className="flex flex-col items-center min-w-[60px]" onClick={handleCopylink}>
+          <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
             <svg
               width="25"
               height="24"
@@ -471,10 +475,10 @@ const Project = ({ script }: ProjectProps) => {
           </div>
           <span className="text-xs font-medium">Copy link</span>
         </div>
-        <div>
+        <div className="flex flex-col items-center min-w-[60px]">
           <div
             onClick={handleEditProject}
-            className="h-12 w-12 flex-shrink-0 justify-center items-center flex flex-col  rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer"
+            className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer"
           >
             <svg
               width="24"

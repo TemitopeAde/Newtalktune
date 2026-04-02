@@ -7,15 +7,17 @@ interface ProgressSliderProps {
   isPlaying?: boolean;
   isAdjustable?: boolean;
   playbackProgress?: number;
+  className?: string;
 }
 
 const ProgressSlider: React.FC<ProgressSliderProps> = ({
   value = 0,
   max = 100,
-  onChange = () => {},
+  onChange = () => { },
   isPlaying = false,
   isAdjustable = true,
   playbackProgress = 0,
+  className = "",
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [currentValue, setCurrentValue] = useState<number>(value);
@@ -93,7 +95,7 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
   const progressPercentage = (currentValue / max) * 100;
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className={`w-full ${className}`}>
       <div className="relative">
         <div
           ref={sliderRef}
@@ -115,9 +117,8 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
         </div>
         {isAdjustable && (
           <div
-            className={`absolute top-1/2 w-4 h-4 bg-[#01796F] rounded-full shadow-lg cursor-grab active:cursor-grabbing transform -translate-y-1/2 ${
-              isDragging ? "scale-110 shadow-xl" : "hover:scale-105"
-            }`}
+            className={`absolute top-1/2 w-4 h-4 bg-[#01796F] rounded-full shadow-lg cursor-grab active:cursor-grabbing transform -translate-y-1/2 ${isDragging ? "scale-110 shadow-xl" : "hover:scale-105"
+              }`}
             style={{
               left: `${progressPercentage}%`,
               marginLeft: "-8px",

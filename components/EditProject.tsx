@@ -106,7 +106,15 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
   }, [audioUrl]);
 
   const handleBack = () => {
-    onOpen("modal", <Project script={script} />);
+    // Pass updated script data back if audio was generated
+    const updatedScript = {
+      ...script,
+      audioFileUrl: audioUrl,
+      audioGenerated: !!audioUrl,
+      projectName: projectName,
+      content: articleContent
+    };
+    onOpen("modal", <Project script={updatedScript} />);
   };
 
   const handleUpdateHighlight = () => {
@@ -279,7 +287,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
     if (voiceModelId) {
       // YarnGPT Voice Models
       const voiceModels = [
-        { id: "idera", image: "/images/models/Idera - Melodic and Gentle.jpeg" },
+        { id: "idera", image: "/images/models/idera.png" },
         { id: "emma", image: "/images/models/Emma - Authoritative & deep.jpeg" },
         { id: "zainab", image: "/images/models/Zainab - soothing & gentle.jpeg" },
         { id: "osagie", image: "/images/models/Osagie - smooth & calm.jpeg" },
@@ -427,7 +435,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
             </div>
           )}
 
-          <button
+          {/* <button
             onClick={handleOpenSettings}
             className="p-2 ml-2 rounded-full bg-gray-700 hover:bg-gray-600"
           >
@@ -477,7 +485,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
                 strokeWidth="1.5"
               />
             </svg>
-          </button>
+          </button> */}
         </div>
 
         {openSettings && (
@@ -637,7 +645,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
 
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
+          "fixed bottom-[42px] left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
           "max-sm:px-4"
         )}
         style={{

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import Support from "./Support";
 
 const Bottombar = () => {
-  const { onOpen } = useStore();
+  const { onOpen, onClose } = useStore();
   const pathname = usePathname();
   const router = useRouter();
   const sidebarItems = [
@@ -54,6 +54,7 @@ const Bottombar = () => {
   };
 
   const handleNavClick = (item: any) => {
+    onClose();
     router.push(item.path);
   };
 
@@ -70,7 +71,7 @@ const Bottombar = () => {
           {sidebarItems.map((item, index) => {
             const Icon = item.icon;
             return (
-              <li 
+              <li
                 key={item.id} 
                 className={cn(
                   "flex justify-center items-center flex-1 relative",

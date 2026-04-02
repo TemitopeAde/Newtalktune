@@ -136,7 +136,7 @@ const Contact = () => {
               <Image src={Pin} alt="Location" height={24} width={24} />
 
               <Link href="" className="">
-                6 Olaosebikan street, Shomolu
+                Lagos, Nigeria
               </Link>
             </div>
           </div>

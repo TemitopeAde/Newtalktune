@@ -2,8 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+
+/* Tiptap editor styles */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #64748b;
+  pointer-events: none;
+  height: 0;
+}
+.tiptap:focus {
+  outline: none;
+}
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+}
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+}
+.tiptap strong {
+  font-weight: 700;
+}
+.tiptap em {
+  font-style: italic;
+}
+
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  /* font-family: Arial, Helvetica, sans-serif; */
 }
 
 input:focus,
@@ -12,6 +48,13 @@ select:focus input:focus-within input:focus-within,
 textarea:focus-within,
 select:focus-within {
   background: transparent !important
+}
+
+/* Prevent iOS Safari from zooming on input focus */
+input,
+textarea,
+select {
+  font-size: 16px !important;
 }
 
 @layer base {

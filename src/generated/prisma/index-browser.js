@@ -209,6 +209,9 @@ exports.Prisma.ContactMessageScalarFieldEnum = {
   name: 'name',
   email: 'email',
   message: 'message',
+  isRead: 'isRead',
+  adminReply: 'adminReply',
+  repliedAt: 'repliedAt',
   createdAt: 'createdAt'
 };
 
