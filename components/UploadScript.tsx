@@ -203,8 +203,8 @@ const StepOne = React.memo<{
       : "text-gray-400";
 
   return (
-    <div className="w-full mx-auto flex-1 h-full flex flex-col overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+    <div className="w-full mx-auto flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
         <div className="flex-shrink-0 flex justify-between items-center mb-8">
           <div className="flex items-center">
             <button
@@ -237,7 +237,7 @@ const StepOne = React.memo<{
           </div>
         </div>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mb-6">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-6 mb-6">
           {/* Monthly limit exhausted banner */}
           {isMonthlyExhausted && (
             <UpgradeBanner
@@ -1416,7 +1416,7 @@ const UploadScript: React.FC<UploadScriptProps> = ({
   }, [projectData, activeTab, userId, scriptLimit, uploadScript, onOpen, resetForm]);
 
   return (
-    <div className="h-full pt-10 pb-20 md:pb-10 px-4 md:px-6 w-full flex flex-col overflow-hidden relative">
+    <div className="h-full min-h-0 pt-10 pb-20 md:pb-10 px-4 md:px-6 w-full flex flex-col overflow-hidden relative">
       {/* Close button - top-right corner of entire modal, shown only on voice model step */}
       {currentStep === 1 && (
         <button
