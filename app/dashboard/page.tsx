@@ -9,6 +9,7 @@ import { useScripts } from "@/hooks/scripts/useScript";
 import AudioPlayerRow from "@/components/AudioPlayerRow";
 import { toast } from "sonner";
 import { Splide, SplideSlide } from "@splidejs/react-splide";
+import { useSession } from "next-auth/react";
 import "@splidejs/react-splide/css";
 
 interface Script {
@@ -38,12 +39,34 @@ interface VoiceModel {
   image?: string;
 }
 
+interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface SubscriptionData {
+  plan: {
+    id: string;
+    name: string;
+    monthlyPrice: number;
+  };
+  usage: {
+    charactersUsed: number;
+    monthlyLimit: number | null;
+    isUnlimited: boolean;
+  };
+}
+
 const Page: React.FC = () => {
   const { onOpen } = useStore();
+  const { status } = useSession();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [voiceModels, setVoiceModels] = useState<VoiceModel[]>([]);
   const [loadingVoices, setLoadingVoices] = useState<boolean>(true);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const SCRIPTS_PER_PAGE = 20;
@@ -59,7 +82,19 @@ const Page: React.FC = () => {
   };
 
   const handleAddVoice = (voiceModelId?: string) => {
-    onOpen("modal", <UploadScript selectedVoiceModelId={voiceModelId} />);
+    if (!userProfile) {
+      toast.error("Unable to load your profile. Please refresh and try again.");
+      return;
+    }
+
+    onOpen(
+      "modal",
+      <UploadScript
+        selectedVoiceModelId={voiceModelId}
+        userId={userProfile.id}
+        subscription={subscription}
+      />
+    );
   };
 
   const openProject = (script: Script) => {
@@ -97,6 +132,39 @@ const Page: React.FC = () => {
     const end = Math.min(pagination.currentPage * SCRIPTS_PER_PAGE, pagination.totalScripts || 0);
     return `${start}-${end} of ${pagination.totalScripts}`;
   };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const [profileRes, subscriptionRes] = await Promise.all([
+          fetch("/api/user/profile"),
+          fetch("/api/user/subscription"),
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.success && profileData.user) {
+            setUserProfile({
+              id: profileData.user.id,
+              name: profileData.user.name,
+              email: profileData.user.email,
+            });
+          }
+        }
+
+        if (subscriptionRes.ok) {
+          const subscriptionData = await subscriptionRes.json();
+          setSubscription(subscriptionData);
+        }
+      } catch (err) {
+        console.error("Failed to load user data:", err);
+      }
+    };
+
+    if (status !== "loading") {
+      fetchUserData();
+    }
+  }, [status]);
 
   useEffect(() => {
     const fetchVoiceModels = async () => {

@@ -324,7 +324,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\SEGUN\\Documents\\Projects\\talktune-webapp\\src\\generated\\prisma",
+      "value": "/Users/adesiyantemitope/Documents/Next/Talktune/talktune-webapp/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -333,12 +333,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\SEGUN\\Documents\\Projects\\talktune-webapp\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/adesiyantemitope/Documents/Next/Talktune/talktune-webapp/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
