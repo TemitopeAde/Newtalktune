@@ -645,7 +645,7 @@ const EditProject = ({ script, voiceSettings: initialVoiceSettings, voiceModelId
 
       <div
         className={cn(
-          "fixed bottom-[42px] left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
+          "fixed bottom-[114px] left-0 right-0 rounded-b-md py-2 w-full justify-center flex bg-background/35 backdrop-blur-sm",
           "max-sm:px-4"
         )}
         style={{

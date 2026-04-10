@@ -181,7 +181,7 @@ const Project = ({ script }: ProjectProps) => {
       </button>
 
       <h2 className="text-2xl font-medium my-4">{script.projectName}</h2>
-      <div className="flex space-x-3 items-center">
+      <div className="flex space-x-3 items-center hidden">
         <h5 className="font-semibold text-sm">
           Voiceover time used: 0.50/30.0 hrs
         </h5>
@@ -231,7 +231,7 @@ const Project = ({ script }: ProjectProps) => {
         </Popover>
       </div>
 
-      <div className="px-4 mb-8 w-full ring-1 mt-6 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex space-y-2 flex-col">
+      <div className="px-4 mb-4 sm:mb-8 w-full ring-1 mt-6 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex space-y-2 flex-col">
         <div className="mr-6 h-10 w-10 flex-shrink-0 justify-center items-center flex mb-4 rounded-full bg-gray-700 hover:bg-gray-600">
           <svg
             width="24"
@@ -261,7 +261,7 @@ const Project = ({ script }: ProjectProps) => {
           {script.content}
         </p>
       </div>
-      <div className="px-4 mb-8 w-full ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
+      <div className="px-4 mb-4 sm:mb-8 w-full ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center">
         {script.audioFileUrl ? (
           <>
             <div className="flex space-x-2 items-center mr-4">
@@ -300,7 +300,7 @@ const Project = ({ script }: ProjectProps) => {
         )}
       </div>
 
-      <div className="bg-[#3F4B65] min-h-[99px] py-4 w-full justify-center rounded-md items-start flex flex-wrap gap-4 overflow-x-hidden">
+      <div className="bg-[#3F4B65] min-h-[99px] py-4 w-full justify-center rounded-md items-start flex flex-wrap gap-2 overflow-x-hidden">
         <div className="flex flex-col items-center min-w-[60px]" onClick={handleSave}>
           <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
             <svg
@@ -325,11 +325,11 @@ const Project = ({ script }: ProjectProps) => {
               />
             </svg>
           </div>
-          <span className="text-xs font-medium">Save</span>
+          <span className="text-xs mt-1 font-medium">Save</span>
         </div>
         <Popover>
           <PopoverTrigger>
-            <div className="flex flex-col items-center min-w-[60px]">
+            <div className="flex flex-col items-center min-w-[50px]">
               <div className="h-12 w-12 flex-shrink-0 justify-center items-center flex rounded-full bg-gray-700 hover:bg-gray-600 hover:ring-1 ring-gray-300 transition-all duration-300 cursor-pointer">
                 <svg
                   width="25"
@@ -352,7 +352,7 @@ const Project = ({ script }: ProjectProps) => {
                   />
                 </svg>
               </div>
-              <span className="text-xs font-medium">Share</span>
+              <span className="text-xs mt-1 font-medium">Share</span>
             </div>
           </PopoverTrigger>
           <PopoverContent
@@ -447,7 +447,7 @@ const Project = ({ script }: ProjectProps) => {
               </svg>
             )}
           </div>
-          <span className="text-xs font-medium">{isDuplicating ? 'Duplicating...' : 'Duplicate'}</span>
+          <span className="text-xs mt-1 font-medium">{isDuplicating ? 'Duplicating...' : 'Duplicate'}</span>
         </div>
 
         <div className="flex flex-col items-center min-w-[60px]" onClick={handleCopylink}>
@@ -473,7 +473,7 @@ const Project = ({ script }: ProjectProps) => {
               />
             </svg>
           </div>
-          <span className="text-xs font-medium">Copy link</span>
+          <span className="text-xs mt-1 font-medium">Copy link</span>
         </div>
         <div className="flex flex-col items-center min-w-[60px]">
           <div
@@ -502,7 +502,7 @@ const Project = ({ script }: ProjectProps) => {
               />
             </svg>
           </div>
-          <span className="text-xs font-medium">Edit Work</span>
+          <span className="text-xs mt-1 font-medium">Edit Work</span>
         </div>
       </div>
     </div>

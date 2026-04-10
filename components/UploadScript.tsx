@@ -204,16 +204,16 @@ const StepOne = React.memo<{
 
   return (
     <div className="w-full mx-auto flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto relative">
         <div className="flex-shrink-0 flex justify-between items-center mb-8">
           <div className="flex items-center">
             <button
               onClick={() => setCurrentStep(1)}
-              className="mr-6 p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+              className="mr-3 sm:mr-6 p-2 rounded-full bg-gray-700 hover:bg-gray-600"
             >
               <ChevronLeft className="w-6 h-6 text-white" />
             </button>
-            <h1 className="lg:text-3xl text-xl font-bold text-white">Upload script</h1>
+            <h1 className="lg:text-3xl text-lg font-bold text-white">Upload script</h1>
           </div>
           <div className="flex relative bg-gray-700 rounded-sm p-1">
             <div
@@ -226,7 +226,7 @@ const StepOne = React.memo<{
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative z-10 px-4 py-2 text-sm rounded-sm transition-colors duration-300 ${activeTab === tab.id
+                className={`relative z-10 px-2 sm:px-4 py-2 text-sm rounded-sm transition-colors duration-300 ${activeTab === tab.id
                     ? "text-gray-900"
                     : "text-gray-300 hover:text-white"
                   }`}
@@ -426,9 +426,9 @@ const StepTwo = React.memo<{
     <div className="max-w-4xl mx-auto h-full flex-1 flex flex-col overflow-hidden">
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col pb-12 sm:pb-4">
-          <h1 className="lg:text-3xl text-2xl font-bold text-white mb-8">Select Voice Model</h1>
+          <h1 className="lg:text-3xl text-2xl font-bold text-white sm:mb-8">Select Voice Model</h1>
           {/* Voice carousel content */}
-          <div className="relative mb-8 w-full">
+          <div className="relative mb-3 sm:mb-8 w-full">
             {isLoadingVoices ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8CBE41]"></div>
@@ -509,7 +509,7 @@ const StepTwo = React.memo<{
 
           {/* Audio player */}
           {!isLoadingVoices && voiceModels.length > 0 && (
-            <div className="px-4 mb-6 w-full max-w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center mx-auto">
+            <div className="px-4 mb-3 sm:mb-6 w-full max-w-[400px] ring-1 ring-[#8CBE41] py-2 rounded-md bg-[#8CBE4120] flex items-center mx-auto">
               <button
                 onClick={() => voiceModels[activeIndex] && onPlayVoice(voiceModels[activeIndex].id)}
                 disabled={!voiceModels[activeIndex]}
