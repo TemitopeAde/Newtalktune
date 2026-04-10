@@ -338,7 +338,7 @@ const StepOne = React.memo<{
         </div>
       </div>
 
-      <div className="flex-shrink-0 w-full flex justify-center pt-4">
+      <div className="flex-shrink-0 w-full flex justify-center pt-1 sm:pt-4">
         <PrimaryBtn
           label="Proceed"
           onClick={() => {
