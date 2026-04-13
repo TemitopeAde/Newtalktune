@@ -3,7 +3,7 @@
 export interface TTSRequest {
     text: string;
     voice?: string;
-    response_format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac';
+    response_format?: 'mp3' | 'wav' | 'opus' | 'flac';
 }
 
 export interface TTSResponse {
@@ -17,7 +17,7 @@ export interface TTSError {
 }
 
 export interface TTSHookResult {
-    generateAudio: (text: string, voice?: string, format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac') => Promise<ArrayBuffer>;
+    generateAudio: (text: string, voice?: string, format?: 'mp3' | 'wav' | 'opus' | 'flac') => Promise<ArrayBuffer>;
     isLoading: boolean;
     error: string | null;
 }

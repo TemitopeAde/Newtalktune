@@ -28,13 +28,7 @@ interface Pagination {
   hasPrevPage: boolean;
 }
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? "";
-
 export default function ContactMessagesAdmin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
-
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -73,47 +67,8 @@ export default function ContactMessagesAdmin() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchMessages(currentPage);
-    }
-  }, [isAuthenticated, currentPage, fetchMessages]);
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-      setPasswordInput("");
-    }
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-bold text-white text-center mb-6">Admin Access</h1>
-          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
-            <input
-              type="password"
-              value={passwordInput}
-              onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
-              placeholder="Enter password"
-              autoFocus
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-[#6b952a]"
-            />
-            {passwordError && (
-              <p className="text-red-400 text-sm text-center">Incorrect password</p>
-            )}
-            <Button type="submit" className="bg-[#6b952a] hover:bg-[#7aaa30] text-white">
-              Continue
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+    fetchMessages(currentPage);
+  }, [currentPage, fetchMessages]);
 
   const handleSelectMessage = (msg: ContactMessage) => {
     setSelectedMessage(msg);

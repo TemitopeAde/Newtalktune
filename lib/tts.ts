@@ -1,6 +1,19 @@
 import { TTSRequest, TTSResponse } from '@/types/tts';
 
 const YARNGPT_API_URL = 'https://yarngpt.ai/api/v1/tts';
+const YARNGPT_MAX_TEXT_LENGTH = 2000;
+
+export class TTSError extends Error {
+    status: number;
+    details: string;
+
+    constructor(message: string, status: number, details = '') {
+        super(message);
+        this.name = 'TTSError';
+        this.status = status;
+        this.details = details;
+    }
+}
 
 /**
  * Generate audio using YarnGPT TTS API
@@ -12,12 +25,23 @@ const YARNGPT_API_URL = 'https://yarngpt.ai/api/v1/tts';
 export async function generateTTSAudio(
     text: string,
     voice?: string,
-    response_format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac'
+    response_format?: 'mp3' | 'wav' | 'opus' | 'flac'
 ): Promise<ArrayBuffer> {
     const apiKey = process.env.YARN_GPT_API_KEY || process.env.YARN_GTP_API_KEY;
 
     if (!apiKey) {
-        throw new Error('YarnGPT API key is not configured. Please add YARN_GPT_API_KEY to your .env file.');
+        throw new TTSError(
+            'YarnGPT API key is not configured. Please add YARN_GPT_API_KEY to your .env file.',
+            500
+        );
+    }
+
+    if (text.length > YARNGPT_MAX_TEXT_LENGTH) {
+        throw new TTSError(
+            `Text exceeds YarnGPT limit of ${YARNGPT_MAX_TEXT_LENGTH} characters.`,
+            400,
+            `Received ${text.length} characters.`
+        );
     }
 
     const requestBody: TTSRequest = {
@@ -25,6 +49,14 @@ export async function generateTTSAudio(
         ...(voice && { voice }),
         ...(response_format && { response_format })
     };
+
+    console.log('[TTS_PROVIDER_REQUEST]', {
+        endpoint: YARNGPT_API_URL,
+        textLength: text.length,
+        textPreview: text.slice(0, 120),
+        voice: voice ?? null,
+        responseFormat: response_format ?? 'mp3'
+    });
 
     const response = await fetch(YARNGPT_API_URL, {
         method: 'POST',
@@ -39,10 +71,17 @@ export async function generateTTSAudio(
     if (!response.ok) {
         let errorMessage = `TTS API error: ${response.status}`;
         let errorDetails = '';
+        const contentType = response.headers.get('content-type');
 
         try {
             const responseText = await response.text();
             console.log('TTS Error Response:', responseText);
+            console.error('[TTS_PROVIDER_ERROR_RESPONSE]', {
+                status: response.status,
+                statusText: response.statusText,
+                contentType,
+                bodyPreview: responseText.slice(0, 500)
+            });
 
             try {
                 const errorData = JSON.parse(responseText);
@@ -59,6 +98,9 @@ export async function generateTTSAudio(
                     }
                 } else if (errorData.message) {
                     errorMessage = errorData.message;
+                    if (errorData.details) {
+                        errorDetails = errorData.details;
+                    }
                 }
             } catch {
                 // If we can't parse as JSON, use the raw text
@@ -70,8 +112,14 @@ export async function generateTTSAudio(
             errorMessage += ` ${response.statusText}`;
         }
 
-        console.error('TTS API Error Details:', { status: response.status, message: errorMessage, details: errorDetails });
-        throw new Error(errorMessage);
+        console.error('TTS API Error Details:', {
+            status: response.status,
+            statusText: response.statusText,
+            contentType,
+            message: errorMessage,
+            details: errorDetails
+        });
+        throw new TTSError(errorMessage, response.status, errorDetails);
     }
 
     // Return the audio data as ArrayBuffer
@@ -108,8 +156,7 @@ export function getAudioMimeType(format: string = 'mp3'): string {
     const mimeTypes: Record<string, string> = {
         'mp3': 'audio/mpeg',
         'wav': 'audio/wav',
-        'ogg': 'audio/ogg',
-        'aac': 'audio/aac',
+        'opus': 'audio/opus',
         'flac': 'audio/flac'
     };
 

@@ -15,7 +15,7 @@ export function useTTS(): TTSHookResult {
         }: {
             text: string;
             voice?: string;
-            format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac'
+            format?: 'mp3' | 'wav' | 'opus' | 'flac'
         }) => {
             return await generateTTSAudio(text, voice, format);
         },
@@ -30,7 +30,7 @@ export function useTTS(): TTSHookResult {
     const generateAudio = async (
         text: string,
         voice?: string,
-        format: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac' = 'mp3'
+        format: 'mp3' | 'wav' | 'opus' | 'flac' = 'mp3'
     ): Promise<ArrayBuffer> => {
         return mutation.mutateAsync({ text, voice, format });
     };
@@ -55,7 +55,7 @@ export function useTTSWithUrl() {
         }: {
             text: string;
             voice?: string;
-            format?: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac'
+            format?: 'mp3' | 'wav' | 'opus' | 'flac'
         }) => {
             const audioBuffer = await generateTTSAudio(text, voice, format);
             const mimeType = getAudioMimeType(format);
@@ -83,7 +83,7 @@ export function useTTSWithUrl() {
     const generateAudioWithUrl = async (
         text: string,
         voice?: string,
-        format: 'mp3' | 'wav' | 'ogg' | 'aac' | 'flac' = 'mp3'
+        format: 'mp3' | 'wav' | 'opus' | 'flac' = 'mp3'
     ) => {
         return mutation.mutateAsync({ text, voice, format });
     };

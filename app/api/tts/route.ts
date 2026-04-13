@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTTSAudio } from '@/lib/tts';
+import { generateTTSAudio, TTSError } from '@/lib/tts';
 
 // YarnGPT Voice Models (for case-insensitive lookup)
 const YARN_GPT_VOICES = [
@@ -20,6 +20,7 @@ const YARN_GPT_VOICES = [
     { id: "Remi", name: "Remi" },
     { id: "Adam", name: "Adam" }
 ];
+const YARNGPT_MAX_TEXT_LENGTH = 2000;
 
 // Helper function to get proper voice name from voice ID (case-insensitive lookup)
 function getProperVoiceName(voiceId: string): string {
@@ -35,7 +36,7 @@ function getProperVoiceName(voiceId: string): string {
  * @body {object} request
  * @body {string} request.text - Text to convert to speech (required)
  * @body {string} [request.voice] - Voice to use (optional)
- * @body {string} [request.response_format] - Audio format: mp3, wav, ogg, aac, flac (optional, defaults to mp3)
+ * @body {string} [request.response_format] - Audio format: mp3, wav, opus, flac (optional, defaults to mp3)
  * 
  * @returns {Response} Audio file stream
  * 
@@ -58,9 +59,20 @@ function getProperVoiceName(voiceId: string): string {
  * ```
  */
 export async function POST(request: NextRequest) {
+    const requestId = crypto.randomUUID();
+
     try {
         const body = await request.json();
         const { text, voice, response_format = 'mp3' } = body;
+
+        console.log('[TTS_ROUTE_REQUEST]', {
+            requestId,
+            textLength: typeof text === 'string' ? text.length : null,
+            trimmedTextLength: typeof text === 'string' ? text.trim().length : null,
+            textPreview: typeof text === 'string' ? text.slice(0, 120) : null,
+            voice: typeof voice === 'string' ? voice : null,
+            responseFormat: response_format
+        });
 
         // Validate required fields
         if (!text) {
@@ -78,7 +90,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate response format
-        const validFormats = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
+        const validFormats = ['mp3', 'wav', 'opus', 'flac'];
         if (response_format && !validFormats.includes(response_format)) {
             return NextResponse.json(
                 {
@@ -89,8 +101,24 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (text.length > YARNGPT_MAX_TEXT_LENGTH) {
+            return NextResponse.json(
+                {
+                    error: 'Text is too long for YarnGPT TTS',
+                    details: `YarnGPT currently supports up to ${YARNGPT_MAX_TEXT_LENGTH} characters. Received ${text.length}.`
+                },
+                { status: 400 }
+            );
+        }
+
         // Ensure proper capitalization for voice name
         const properVoiceName = voice ? getProperVoiceName(voice) : undefined;
+
+        console.log('[TTS_ROUTE_FORWARD]', {
+            requestId,
+            properVoiceName,
+            responseFormat: response_format
+        });
 
         // Generate audio using YarnGPT API
         const audioBuffer = await generateTTSAudio(text, properVoiceName, response_format);
@@ -99,8 +127,7 @@ export async function POST(request: NextRequest) {
         const mimeTypes: Record<string, string> = {
             'mp3': 'audio/mpeg',
             'wav': 'audio/wav',
-            'ogg': 'audio/ogg',
-            'aac': 'audio/aac',
+            'opus': 'audio/opus',
             'flac': 'audio/flac'
         };
 
@@ -119,15 +146,23 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('TTS API Error:', error);
+        console.error('[TTS_ROUTE_ERROR]', {
+            requestId,
+            errorName: error instanceof Error ? error.name : 'UnknownError',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error occurred',
+            errorDetails: error instanceof TTSError ? error.details : ''
+        });
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        const errorDetails = error instanceof TTSError ? error.details : '';
+        const statusCode = error instanceof TTSError ? error.status : 500;
 
         return NextResponse.json(
             {
                 error: 'Failed to generate audio',
-                details: errorMessage
+                details: errorDetails || errorMessage
             },
-            { status: 500 }
+            { status: statusCode >= 400 && statusCode < 600 ? statusCode : 500 }
         );
     }
 }
@@ -145,7 +180,7 @@ export async function GET() {
             body: {
                 text: 'string (required) - Text to convert to speech',
                 voice: 'string (optional) - Voice to use',
-                response_format: 'string (optional) - Audio format: mp3, wav, ogg, aac, flac (defaults to mp3)'
+                response_format: 'string (optional) - Audio format: mp3, wav, opus, flac (defaults to mp3)'
             },
             response: 'Audio file stream'
         },
