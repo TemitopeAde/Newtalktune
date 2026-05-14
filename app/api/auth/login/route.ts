@@ -74,22 +74,22 @@ export async function POST(request: NextRequest) {
     try {
         const { cfTurnstileToken, ...body } = await request.json()
 
-        // Verify Cloudflare Turnstile token
-        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                secret: process.env.TURNSTILE_SECRET_KEY,
-                response: cfTurnstileToken,
-            }),
-        })
-        const verifyData = await verifyRes.json()
-        if (!verifyData.success) {
-            return NextResponse.json(
-                { error: 'CAPTCHA verification failed. Please try again.' },
-                { status: StatusCodes.BAD_REQUEST }
-            )
-        }
+        // CAPTCHA verification disabled temporarily
+        // const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({
+        //         secret: process.env.TURNSTILE_SECRET_KEY,
+        //         response: cfTurnstileToken,
+        //     }),
+        // })
+        // const verifyData = await verifyRes.json()
+        // if (!verifyData.success) {
+        //     return NextResponse.json(
+        //         { error: 'CAPTCHA verification failed. Please try again.' },
+        //         { status: StatusCodes.BAD_REQUEST }
+        //     )
+        // }
 
         const result = await login(body) as LoginResponse
 
