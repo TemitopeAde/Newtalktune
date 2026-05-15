@@ -52,7 +52,7 @@ const CountrySelect: React.FC<Props> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-[260px] max-h-72 overflow-y-auto bg-[#121212] text-white border-gray-600"
+        className="w-[260px] max-h-72 overflow-y-auto bg-background text-white border-gray-600"
       >
         {countries.map((c) => {
           const code = c.code === "GB" ? "UK" : c.code;
@@ -63,9 +63,7 @@ const CountrySelect: React.FC<Props> = ({
               className="cursor-pointer focus:bg-white/10"
             >
               <div className="flex items-center gap-2">
-                <span className="font-semibold w-14">{code}</span>
                 <span className="text-gray-300">{c.name}</span>
-                <span className="ml-auto text-gray-400">{c.dial_code}</span>
               </div>
             </DropdownMenuItem>
           );

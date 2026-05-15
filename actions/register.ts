@@ -25,6 +25,15 @@ export async function register(formData: UserRegistrationData) {
             return { error: "Email already exists" }
         }
 
+        if (phoneNumber) {
+            const existingPhone = await prisma.user.findFirst({
+                where: { phoneNumber: phoneNumber }
+            })
+            if (existingPhone) {
+                return { error: "Phone number already exists" }
+            }
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const otp = parseInt(generateOTP(), 10)
@@ -77,8 +86,13 @@ export async function register(formData: UserRegistrationData) {
 
             // Handle specific Prisma error codes
             switch (prismaError.code) {
-                case 'P2002':
+                case 'P2002': {
+                    const target: string[] = prismaError.meta?.target ?? []
+                    if (target.includes('phoneNumber')) {
+                        return { error: "Phone number already exists" }
+                    }
                     return { error: "Email already exists" }
+                }
                 case 'P2025':
                     return { error: "Record not found" }
                 default:

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getCountryCallingCode, isSupportedCountry } from "libphonenumber-js";
 
 interface Country {
   name: string;
@@ -17,27 +18,30 @@ export const useCountries = () => {
       try {
         setIsLoading(true);
         setError(null);
+        // Only need name + cca2; dial codes come from libphonenumber-js
         const res = await fetch(
-          "https://restcountries.com/v3.1/all?fields=name,cca2,idd",
+          "https://restcountries.com/v3.1/all?fields=name,cca2",
           { signal: controller.signal }
         );
         if (!res.ok) throw new Error(`Failed to load countries (${res.status})`);
         const json: Array<{
           name?: { common?: string };
           cca2?: string;
-          idd?: { root?: string; suffixes?: string[] };
         }> = await res.json();
 
         const countries: Country[] = json
           .map((c) => {
             const name = c.name?.common?.trim();
             const code = c.cca2?.trim();
-            const root = (c.idd?.root || "+").trim();
-            const suffix = (c.idd?.suffixes && c.idd!.suffixes[0]) || "";
-            // Ensure single leading '+' and build dial code
-            const normalizedRoot = root.startsWith("+") ? root : `+${root}`;
-            const dial_code = `${normalizedRoot}${suffix}`.replace(/\+\+/g, "+");
-            if (!name || !code || dial_code === "+") return null;
+            if (!name || !code) return null;
+
+            // Use libphonenumber-js as the authoritative source for calling codes.
+            // This is the same library used for phone validation, so the codes
+            // are always consistent (e.g. US → +1, AS → +1684, GU → +1671).
+            if (!isSupportedCountry(code as any)) return null;
+            const callingCode = getCountryCallingCode(code as any);
+            const dial_code = `+${callingCode}`;
+
             return { name, code, dial_code } as Country;
           })
           .filter(Boolean) as Country[];
