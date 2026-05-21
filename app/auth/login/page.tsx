@@ -109,7 +109,7 @@ function LoginForm() {
         // Check if user needs email verification
         if (result.result.requiresVerification) {
           setEmail(result.result.email || formData.email);
-          router.push(`/auth/verify?email=${encodeURIComponent(result.result.email || formData.email)}`);
+          await router.push(`/auth/verify?email=${encodeURIComponent(result.result.email || formData.email)}`);
         }
         return;
       }
@@ -120,7 +120,8 @@ function LoginForm() {
         if (result.token) {
           setToken(result.token);
         }
-        router.push(callbackUrl);
+        await router.prefetch('/dashboard');
+        await router.push(callbackUrl);
       }
 
     } catch (err: any) {
